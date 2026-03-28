@@ -13,14 +13,14 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    env:
-      HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
 
       - name: Validate Hugging Face configuration
+        env:
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           if [ -z "$HF_SPACE_ID" ]; then
             echo "Missing GitHub variable: HF_SPACE_ID"
@@ -33,6 +33,9 @@ jobs:
           fi
 
       - name: Clone Hugging Face Space
+        env:
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git clone "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}" hf-space
 
