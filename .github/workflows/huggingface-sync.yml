@@ -45,10 +45,14 @@ jobs:
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.env' \
+            --exclude '.dockerignore' \
             --exclude 'hf-space/' \
             --exclude 'node_modules/' \
             --exclude 'logs/' \
             --exclude 'caches/' \
+            --exclude 'docs/' \
+            --exclude 'public/public/favicon.png' \
+            --exclude 'public/src/assets/background.mp4' \
             ./ hf-space/
 
       - name: Commit and push changes
