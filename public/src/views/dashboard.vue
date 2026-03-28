@@ -46,8 +46,12 @@
                   class="action-button font-bold border border-yellow-200 bg-yellow-50 text-yellow-900 px-4 py-2 rounded-xl shadow-sm hover:bg-yellow-100 hover:border-yellow-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
             导出账号
           </button>
+          <button @click="openModelsPanel"
+                  class="action-button font-bold border border-violet-200 bg-violet-50 text-violet-900 px-4 py-2 rounded-xl shadow-sm hover:bg-violet-100 hover:border-violet-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
+            可用模型
+          </button>
           <router-link to="/settings"
-                       class="action-button col-span-2 sm:col-span-1 font-bold border border-blue-200 bg-blue-50 text-blue-900 px-4 py-2 rounded-xl shadow-sm hover:bg-blue-100 hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
+                        class="action-button col-span-2 sm:col-span-1 font-bold border border-blue-200 bg-blue-50 text-blue-900 px-4 py-2 rounded-xl shadow-sm hover:bg-blue-100 hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
             系统设置
           </router-link>
         </div>
@@ -309,6 +313,128 @@
         <span>{{ toast.message }}</span>
       </div>
     </div>
+
+    <!-- 可用模型面板 -->
+    <div v-if="showModelsPanel"
+         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+         @click.self="showModelsPanel = false">
+      <div class="relative bg-white/90 backdrop-blur-lg rounded-2xl p-6 w-11/12 max-w-5xl max-h-[85vh] overflow-hidden transform transition-all duration-300 scale-100 opacity-100">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">可用模型</h2>
+            <p class="text-sm text-slate-500 mt-1">展示当前实例可直接调用的全部模型</p>
+          </div>
+          <button @click="showModelsPanel = false"
+                  class="px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all duration-300">
+            关闭
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <span>共 {{ availableModels.length }} 个模型</span>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">基础 {{ modelGroups.base.length }}</span>
+            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Thinking {{ modelGroups.thinking.length }}</span>
+            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs text-cyan-700">Search {{ modelGroups.search.length }}</span>
+            <span class="rounded-full bg-rose-100 px-3 py-1 text-xs text-rose-700">Image {{ modelGroups.image.length }}</span>
+            <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs text-indigo-700">Video {{ modelGroups.video.length }}</span>
+            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">Image Edit {{ modelGroups.imageEdit.length }}</span>
+          </div>
+          <div class="flex w-full sm:w-auto gap-2">
+            <div class="relative w-full sm:w-72">
+              <input v-model="modelKeyword"
+                     type="text"
+                     placeholder="搜索模型 ID"
+                     class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm focus:border-violet-400 focus:ring-violet-400 transition-all duration-300">
+            </div>
+            <button @click="refreshModels"
+                    :disabled="isLoadingModels"
+                    :class="[
+                      'rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 border',
+                      isLoadingModels
+                        ? 'bg-violet-200 text-violet-600 border-violet-200 cursor-not-allowed'
+                        : 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700'
+                    ]">
+              {{ isLoadingModels ? '刷新中...' : '刷新模型列表' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="isLoadingModels" class="py-12 text-center text-slate-500">
+          正在加载模型列表...
+        </div>
+
+        <div v-else-if="modelsError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-red-600">
+          <div class="text-lg font-semibold">模型列表加载失败</div>
+          <div class="mt-2 text-sm whitespace-pre-line">{{ modelsError }}</div>
+          <button @click="refreshModels"
+                  class="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-all duration-300">
+            重新加载
+          </button>
+        </div>
+
+        <div v-else class="max-h-[60vh] overflow-y-auto pr-2">
+          <div class="space-y-5">
+            <div v-for="group in groupedModelSections"
+                 :key="group.key"
+                 v-show="group.models.length"
+                 class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-800">{{ group.title }}</h3>
+                  <p class="text-xs text-slate-500 mt-1">{{ group.description }}</p>
+                </div>
+                <span :class="group.badgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">
+                  {{ group.models.length }} 个
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div v-for="model in group.models"
+                     :key="model.id"
+                     class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-semibold text-slate-800 break-all">{{ model.id }}</div>
+                      <div class="mt-2 text-xs text-slate-500 break-all">模型名称：{{ getModelDisplayName(model) }}</div>
+                      <div class="mt-2 flex flex-wrap gap-2">
+                        <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{{ model.owned_by || 'unknown' }}</span>
+                        <span v-if="modelTagSummary(model).length"
+                              class="rounded-full bg-violet-100 px-2 py-1 text-xs text-violet-700">
+                          {{ modelTagSummary(model).join(' / ') }}
+                        </span>
+                        <span class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
+                          推荐：{{ getModelUseCase(model) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <button @click="copyToClipboard(model.id)"
+                            class="rounded-lg bg-violet-100 px-2 py-2 text-sm text-violet-700 hover:bg-violet-200 transition-all duration-300">
+                      复制 ID
+                    </button>
+                    <button @click="copyToClipboard(getModelDisplayName(model))"
+                            class="rounded-lg bg-sky-100 px-2 py-2 text-sm text-sky-700 hover:bg-sky-200 transition-all duration-300">
+                      复制名字
+                    </button>
+                    <button @click="copyModelRequestExample(model)"
+                            class="col-span-2 sm:col-span-1 rounded-lg bg-amber-100 px-2 py-2 text-sm text-amber-700 hover:bg-amber-200 transition-all duration-300">
+                      复制示例
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!filteredModels.length" class="py-12 text-center text-slate-500">
+            没有匹配的模型
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -342,6 +468,11 @@ const showDeleteAllConfirm = ref(false)
 const isRefreshingAll = ref(false)
 const isForceRefreshingAll = ref(false)
 const refreshingTokens = ref([])
+const showModelsPanel = ref(false)
+const availableModels = ref([])
+const isLoadingModels = ref(false)
+const modelsError = ref('')
+const modelKeyword = ref('')
 
 // Toast 通知
 const toast = ref({
@@ -349,6 +480,201 @@ const toast = ref({
   message: '',
   type: 'success'
 })
+
+const filteredModels = computed(() => {
+  const keyword = modelKeyword.value.trim().toLowerCase()
+  if (!keyword) {
+    return availableModels.value
+  }
+
+  return availableModels.value.filter(model =>
+    model.id.toLowerCase().includes(keyword)
+  )
+})
+
+const createModelGroupMap = (models) => {
+  const groups = {
+    base: [],
+    thinking: [],
+    search: [],
+    image: [],
+    video: [],
+    imageEdit: []
+  }
+
+  models.forEach(model => {
+    const id = model.id.toLowerCase()
+
+    if (id.includes('image-edit')) {
+      groups.imageEdit.push(model)
+    } else if (id.includes('video')) {
+      groups.video.push(model)
+    } else if (id.includes('image')) {
+      groups.image.push(model)
+    } else if (id.includes('thinking') && id.includes('search')) {
+      groups.thinking.push(model)
+      groups.search.push(model)
+    } else if (id.includes('thinking')) {
+      groups.thinking.push(model)
+    } else if (id.includes('search')) {
+      groups.search.push(model)
+    } else {
+      groups.base.push(model)
+    }
+  })
+
+  return groups
+}
+
+const modelGroups = computed(() => createModelGroupMap(filteredModels.value))
+
+const groupedModelSections = computed(() => [
+  {
+    key: 'base',
+    title: '基础模型',
+    description: '适合普通对话、通用推理和默认场景',
+    badgeClass: 'bg-slate-100 text-slate-700',
+    models: modelGroups.value.base
+  },
+  {
+    key: 'thinking',
+    title: 'Thinking 模型',
+    description: '带推理输出能力，适合复杂思考场景',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    models: modelGroups.value.thinking
+  },
+  {
+    key: 'search',
+    title: 'Search 模型',
+    description: '带搜索能力，适合联网或检索场景',
+    badgeClass: 'bg-cyan-100 text-cyan-700',
+    models: modelGroups.value.search
+  },
+  {
+    key: 'image',
+    title: 'Image 模型',
+    description: '适合图片理解或生图相关能力',
+    badgeClass: 'bg-rose-100 text-rose-700',
+    models: modelGroups.value.image
+  },
+  {
+    key: 'video',
+    title: 'Video 模型',
+    description: '适合视频相关能力或多模态视频处理',
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    models: modelGroups.value.video
+  },
+  {
+    key: 'imageEdit',
+    title: 'Image Edit 模型',
+    description: '适合图像编辑与改图类能力',
+    badgeClass: 'bg-emerald-100 text-emerald-700',
+    models: modelGroups.value.imageEdit
+  }
+])
+
+const modelTagSummary = (model) => {
+  const id = model.id.toLowerCase()
+  const tags = []
+
+  if (id.includes('thinking')) tags.push('thinking')
+  if (id.includes('search')) tags.push('search')
+  if (id.includes('image-edit')) tags.push('image-edit')
+  else if (id.includes('image')) tags.push('image')
+  if (id.includes('video')) tags.push('video')
+
+  return tags
+}
+
+const getModelDisplayName = (model) => {
+  return model.id
+}
+
+const getModelUseCase = (model) => {
+  const id = model.id.toLowerCase()
+
+  if (id.includes('coder')) {
+    return '代码生成/编程'
+  }
+
+  if (id.includes('vl') || id.includes('omni')) {
+    return '多模态理解'
+  }
+
+  if (id.includes('image-edit')) {
+    return '图片编辑'
+  }
+
+  if (id.includes('image')) {
+    return '图像生成/识图'
+  }
+
+  if (id.includes('video')) {
+    return '视频理解'
+  }
+
+  if (id.includes('thinking')) {
+    return '复杂推理'
+  }
+
+  if (id.includes('search')) {
+    return '联网搜索'
+  }
+
+  if (id.includes('flash')) {
+    return '快速响应'
+  }
+
+  return '通用对话'
+}
+
+const copyModelRequestExample = async (model) => {
+  const example = {
+    model: model.id,
+    messages: [
+      {
+        role: 'user',
+        content: '你好，请介绍一下这个模型的适用场景。'
+      }
+    ],
+    stream: false
+  }
+
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(example, null, 2))
+    showToast(`已复制 ${model.id} 的请求示例`)
+  } catch (error) {
+    console.error('复制模型请求示例失败:', error)
+    showToast('复制请求示例失败', 'error')
+  }
+}
+
+const getModelsErrorMessage = (error) => {
+  if (error.response) {
+    const status = error.response.status
+    const backendMessage = error.response.data?.error || error.response.data?.message
+
+    if (status === 401 || status === 403) {
+      return '当前 API Key 没有访问模型列表的权限，请检查管理员密钥或重新登录。'
+    }
+
+    if (status === 404) {
+      return '模型列表接口不存在，请确认当前服务版本是否已正确部署。'
+    }
+
+    if (status >= 500) {
+      return `服务端返回 ${status} 错误。${backendMessage ? `\n后端信息：${backendMessage}` : ''}`
+    }
+
+    return `请求失败，状态码 ${status}。${backendMessage ? `\n后端信息：${backendMessage}` : ''}`
+  }
+
+  if (error.request) {
+    return '请求已发出，但没有收到服务响应。请检查当前 Space 是否正在重启或网络是否可用。'
+  }
+
+  return `请求构造失败：${error.message}`
+}
 
 const isSelected = (email) => {
   return selectedTokens.value.includes(email)
@@ -675,6 +1001,44 @@ const exportAccounts = async () => {
   } catch (error) {
     console.error('导出失败:', error)
     showToast('导出失败: ' + error.message, 'error')
+  }
+}
+
+const getAvailableModels = async () => {
+  isLoadingModels.value = true
+  modelsError.value = ''
+
+  try {
+    const response = await axios.get('/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('apiKey') || ''}`
+      }
+    })
+
+    const models = Array.isArray(response.data?.data) ? response.data.data : []
+    availableModels.value = [...models].sort((a, b) => a.id.localeCompare(b.id))
+  } catch (error) {
+    console.error('获取模型列表失败:', error)
+    modelsError.value = getModelsErrorMessage(error)
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
+const refreshModels = async () => {
+  await getAvailableModels()
+
+  if (!modelsError.value) {
+    showToast('模型列表已刷新')
+  }
+}
+
+const openModelsPanel = async () => {
+  showModelsPanel.value = true
+  modelKeyword.value = ''
+
+  if (!availableModels.value.length) {
+    await getAvailableModels()
   }
 }
 
