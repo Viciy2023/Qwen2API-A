@@ -9,7 +9,7 @@ RUN apk add --no-cache python3 py3-pip
 # 全局安装PM2
 RUN npm install -g pm2
 
-RUN pip install --no-cache-dir huggingface_hub watchdog
+RUN pip install --no-cache-dir --break-system-packages huggingface_hub watchdog
 
 WORKDIR /app
 
