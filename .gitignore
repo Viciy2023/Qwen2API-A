@@ -12,3 +12,5 @@ pkg_dist/
 /public/dist
 构建日志.MD
 运行日志.MD
+qwen-auto-register/output
+qwen-auto-register

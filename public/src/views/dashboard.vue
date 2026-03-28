@@ -410,6 +410,7 @@
                 <div>
                   <h3 class="text-lg font-semibold text-slate-800">{{ group.title }}</h3>
                   <p class="text-xs text-slate-500 mt-1">{{ group.description }}</p>
+                  <p class="mt-2 text-xs text-slate-400">当前分类已按模型强度从高到低排序</p>
                 </div>
                 <span :class="group.badgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">
                   {{ group.models.length }} 个
@@ -433,6 +434,15 @@
                         <span class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
                           推荐：{{ getModelUseCase(model) }}
                         </span>
+                        <div class="relative group/tooltip inline-flex">
+                          <span class="cursor-help rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
+                            强度：{{ getModelPriorityLabel(model, group.key) }}
+                          </span>
+                          <div class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-64 rounded-2xl border border-amber-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-sm group-hover/tooltip:block">
+                            <div class="font-semibold text-amber-700">强度说明</div>
+                            <div class="mt-2 leading-5 whitespace-pre-line">{{ getModelPriorityTooltip(model, group.key) }}</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -555,6 +565,60 @@ const createModelGroupMap = (models) => {
   return groups
 }
 
+const getModelStrengthScore = (model, groupKey = 'base') => {
+  const id = model.id.toLowerCase()
+  let score = 0
+
+  if (id.includes('max')) score += 120
+  if (id.includes('plus')) score += 90
+  if (id.includes('vl')) score += 82
+  if (id.includes('omni')) score += 80
+  if (id.includes('coder')) score += 78
+  if (id.includes('flash')) score += 50
+  if (id.includes('latest')) score += 18
+  if (id.includes('thinking')) score += 8
+  if (id.includes('search')) score += 6
+  if (id.includes('image-edit')) score += 12
+  else if (id.includes('image')) score += 10
+  if (id.includes('video')) score += 10
+
+  if (groupKey === 'base') {
+    if (id.includes('max')) score += 20
+    if (id.includes('flash')) score -= 8
+  }
+
+  if (groupKey === 'thinking') {
+    if (id.includes('max')) score += 12
+    if (id.includes('plus')) score += 10
+    if (id.includes('flash')) score -= 6
+  }
+
+  if (groupKey === 'search') {
+    if (id.includes('max')) score += 12
+    if (id.includes('plus')) score += 8
+    if (id.includes('flash')) score -= 5
+  }
+
+  if (groupKey === 'image' || groupKey === 'imageEdit' || groupKey === 'video') {
+    if (id.includes('vl') || id.includes('omni')) score += 14
+    if (id.includes('max')) score += 10
+    if (id.includes('flash')) score -= 4
+  }
+
+  return score
+}
+
+const sortModelsByStrength = (models, groupKey) => {
+  return [...models].sort((a, b) => {
+    const scoreDiff = getModelStrengthScore(b, groupKey) - getModelStrengthScore(a, groupKey)
+    if (scoreDiff !== 0) {
+      return scoreDiff
+    }
+
+    return a.id.localeCompare(b.id)
+  })
+}
+
 const allModelGroups = computed(() => createModelGroupMap(availableModels.value))
 const modelGroups = computed(() => createModelGroupMap(filteredModels.value))
 
@@ -572,42 +636,42 @@ const groupedModelSections = computed(() => [
     title: '基础模型',
     description: '适合普通对话、通用推理和默认场景',
     badgeClass: 'bg-slate-100 text-slate-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'base' ? modelGroups.value.base : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'base' ? sortModelsByStrength(modelGroups.value.base, 'base') : []
   },
   {
     key: 'thinking',
     title: 'Thinking 模型',
     description: '带推理输出能力，适合复杂思考场景',
     badgeClass: 'bg-amber-100 text-amber-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'thinking' ? modelGroups.value.thinking : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'thinking' ? sortModelsByStrength(modelGroups.value.thinking, 'thinking') : []
   },
   {
     key: 'search',
     title: 'Search 模型',
     description: '带搜索能力，适合联网或检索场景',
     badgeClass: 'bg-cyan-100 text-cyan-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'search' ? modelGroups.value.search : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'search' ? sortModelsByStrength(modelGroups.value.search, 'search') : []
   },
   {
     key: 'image',
     title: 'Image 模型',
     description: '适合图片理解或生图相关能力',
     badgeClass: 'bg-rose-100 text-rose-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'image' ? modelGroups.value.image : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'image' ? sortModelsByStrength(modelGroups.value.image, 'image') : []
   },
   {
     key: 'video',
     title: 'Video 模型',
     description: '适合视频相关能力或多模态视频处理',
     badgeClass: 'bg-indigo-100 text-indigo-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'video' ? modelGroups.value.video : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'video' ? sortModelsByStrength(modelGroups.value.video, 'video') : []
   },
   {
     key: 'imageEdit',
     title: 'Image Edit 模型',
     description: '适合图像编辑与改图类能力',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'imageEdit' ? modelGroups.value.imageEdit : []
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'imageEdit' ? sortModelsByStrength(modelGroups.value.imageEdit, 'imageEdit') : []
   }
 ])
 
@@ -684,6 +748,28 @@ const getModelUseCase = (model) => {
   }
 
   return '通用对话'
+}
+
+const getModelPriorityLabel = (model, groupKey) => {
+  const score = getModelStrengthScore(model, groupKey)
+
+  if (score >= 125) return 'S'
+  if (score >= 95) return 'A'
+  if (score >= 70) return 'B'
+  return 'C'
+}
+
+const getModelPriorityTooltip = (model, groupKey) => {
+  const level = getModelPriorityLabel(model, groupKey)
+  const useCase = getModelUseCase(model)
+  const baseText = {
+    S: 'S：该分类下的第一梯队，优先推荐使用。',
+    A: 'A：该分类下的强势模型，适合大多数正式场景。',
+    B: 'B：该分类下的均衡模型，适合常规使用。',
+    C: 'C：该分类下的基础可用模型，适合轻量或备用场景。'
+  }
+
+  return `${baseText[level]}\n推荐用途：${useCase}`
 }
 
 const copyModelRequestExample = async (model) => {
