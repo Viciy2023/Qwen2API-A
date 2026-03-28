@@ -3,6 +3,7 @@ FROM node:lts-alpine
 ENV NODE_ENV=production
 ENV SERVICE_PORT=7860
 ENV LISTEN_ADDRESS=0.0.0.0
+ENV NPM_CONFIG_PRODUCTION=false
 
 RUN apk add --no-cache python3 py3-pip
 
@@ -23,7 +24,7 @@ RUN npm install
 COPY . .
 
 # 构建前端应用
-RUN cd public && npm install && npm run build
+RUN cd public && npm install --include=dev && npm run build
 
 # 删除前端不必要文件
 RUN rm -rf public/src public/node_modules public/package*.json
