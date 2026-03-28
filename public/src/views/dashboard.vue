@@ -333,12 +333,39 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
             <span>共 {{ availableModels.length }} 个模型</span>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">基础 {{ modelGroups.base.length }}</span>
-            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700">Thinking {{ modelGroups.thinking.length }}</span>
-            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs text-cyan-700">Search {{ modelGroups.search.length }}</span>
-            <span class="rounded-full bg-rose-100 px-3 py-1 text-xs text-rose-700">Image {{ modelGroups.image.length }}</span>
-            <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs text-indigo-700">Video {{ modelGroups.video.length }}</span>
-            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">Image Edit {{ modelGroups.imageEdit.length }}</span>
+            <button @click="setActiveModelFilter('all')"
+                    :class="[
+                      'rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300',
+                      activeModelFilter === 'all'
+                        ? 'bg-slate-800 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ]">
+              全部 {{ availableModels.length }}
+            </button>
+            <button @click="setActiveModelFilter('base')"
+                    :class="getFilterBadgeClass('base', 'bg-slate-100', 'text-slate-600', 'hover:bg-slate-200', 'bg-slate-700')">
+              基础 {{ allModelGroups.base.length }}
+            </button>
+            <button @click="setActiveModelFilter('thinking')"
+                    :class="getFilterBadgeClass('thinking', 'bg-amber-100', 'text-amber-700', 'hover:bg-amber-200', 'bg-amber-500')">
+              Thinking {{ allModelGroups.thinking.length }}
+            </button>
+            <button @click="setActiveModelFilter('search')"
+                    :class="getFilterBadgeClass('search', 'bg-cyan-100', 'text-cyan-700', 'hover:bg-cyan-200', 'bg-cyan-500')">
+              Search {{ allModelGroups.search.length }}
+            </button>
+            <button @click="setActiveModelFilter('image')"
+                    :class="getFilterBadgeClass('image', 'bg-rose-100', 'text-rose-700', 'hover:bg-rose-200', 'bg-rose-500')">
+              Image {{ allModelGroups.image.length }}
+            </button>
+            <button @click="setActiveModelFilter('video')"
+                    :class="getFilterBadgeClass('video', 'bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200', 'bg-indigo-500')">
+              Video {{ allModelGroups.video.length }}
+            </button>
+            <button @click="setActiveModelFilter('imageEdit')"
+                    :class="getFilterBadgeClass('imageEdit', 'bg-emerald-100', 'text-emerald-700', 'hover:bg-emerald-200', 'bg-emerald-500')">
+              Image Edit {{ allModelGroups.imageEdit.length }}
+            </button>
           </div>
           <div class="flex w-full sm:w-auto gap-2">
             <div class="relative w-full sm:w-72">
@@ -373,7 +400,7 @@
           </button>
         </div>
 
-        <div v-else class="max-h-[60vh] overflow-y-auto pr-2">
+        <div v-else ref="modelsScrollContainer" class="max-h-[60vh] overflow-y-auto pr-2">
           <div class="space-y-5">
             <div v-for="group in groupedModelSections"
                  :key="group.key"
@@ -429,7 +456,7 @@
             </div>
           </div>
 
-          <div v-if="!filteredModels.length" class="py-12 text-center text-slate-500">
+          <div v-if="!filteredModelsByCategory.length" class="py-12 text-center text-slate-500">
             没有匹配的模型
           </div>
         </div>
@@ -473,6 +500,8 @@ const availableModels = ref([])
 const isLoadingModels = ref(false)
 const modelsError = ref('')
 const modelKeyword = ref('')
+const activeModelFilter = ref('all')
+const modelsScrollContainer = ref(null)
 
 // Toast 通知
 const toast = ref({
@@ -526,7 +555,16 @@ const createModelGroupMap = (models) => {
   return groups
 }
 
+const allModelGroups = computed(() => createModelGroupMap(availableModels.value))
 const modelGroups = computed(() => createModelGroupMap(filteredModels.value))
+
+const filteredModelsByCategory = computed(() => {
+  if (activeModelFilter.value === 'all') {
+    return filteredModels.value
+  }
+
+  return modelGroups.value[activeModelFilter.value] || []
+})
 
 const groupedModelSections = computed(() => [
   {
@@ -534,42 +572,42 @@ const groupedModelSections = computed(() => [
     title: '基础模型',
     description: '适合普通对话、通用推理和默认场景',
     badgeClass: 'bg-slate-100 text-slate-700',
-    models: modelGroups.value.base
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'base' ? modelGroups.value.base : []
   },
   {
     key: 'thinking',
     title: 'Thinking 模型',
     description: '带推理输出能力，适合复杂思考场景',
     badgeClass: 'bg-amber-100 text-amber-700',
-    models: modelGroups.value.thinking
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'thinking' ? modelGroups.value.thinking : []
   },
   {
     key: 'search',
     title: 'Search 模型',
     description: '带搜索能力，适合联网或检索场景',
     badgeClass: 'bg-cyan-100 text-cyan-700',
-    models: modelGroups.value.search
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'search' ? modelGroups.value.search : []
   },
   {
     key: 'image',
     title: 'Image 模型',
     description: '适合图片理解或生图相关能力',
     badgeClass: 'bg-rose-100 text-rose-700',
-    models: modelGroups.value.image
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'image' ? modelGroups.value.image : []
   },
   {
     key: 'video',
     title: 'Video 模型',
     description: '适合视频相关能力或多模态视频处理',
     badgeClass: 'bg-indigo-100 text-indigo-700',
-    models: modelGroups.value.video
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'video' ? modelGroups.value.video : []
   },
   {
     key: 'imageEdit',
     title: 'Image Edit 模型',
     description: '适合图像编辑与改图类能力',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    models: modelGroups.value.imageEdit
+    models: activeModelFilter.value === 'all' || activeModelFilter.value === 'imageEdit' ? modelGroups.value.imageEdit : []
   }
 ])
 
@@ -588,6 +626,26 @@ const modelTagSummary = (model) => {
 
 const getModelDisplayName = (model) => {
   return model.id
+}
+
+const setActiveModelFilter = (filterKey) => {
+  activeModelFilter.value = filterKey
+
+  if (modelsScrollContainer.value) {
+    modelsScrollContainer.value.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+}
+
+const getFilterBadgeClass = (filterKey, bgClass, textClass, hoverClass, activeBgClass) => {
+  return [
+    'rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300',
+    activeModelFilter.value === filterKey
+      ? `${activeBgClass} text-white`
+      : `${bgClass} ${textClass} ${hoverClass}`
+  ]
 }
 
 const getModelUseCase = (model) => {
@@ -1036,6 +1094,7 @@ const refreshModels = async () => {
 const openModelsPanel = async () => {
   showModelsPanel.value = true
   modelKeyword.value = ''
+  activeModelFilter.value = 'all'
 
   if (!availableModels.value.length) {
     await getAvailableModels()
