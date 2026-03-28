@@ -1,7 +1,15 @@
 FROM node:lts-alpine
 
+ENV NODE_ENV=production
+ENV SERVICE_PORT=7860
+ENV LISTEN_ADDRESS=0.0.0.0
+
+RUN apk add --no-cache python3 py3-pip
+
 # 全局安装PM2
 RUN npm install -g pm2
+
+RUN pip install --no-cache-dir huggingface_hub watchdog
 
 WORKDIR /app
 
@@ -26,8 +34,12 @@ RUN chmod 777 /app
 # 创建日志目录
 RUN mkdir -p logs
 
-# 暴露端口（通过环境变量SERVICE_PORT控制）
-EXPOSE 3000
+# 允许执行入口脚本
+RUN chmod +x /app/docker/entrypoint.sh
 
-# 使用PM2启动应用，并保持容器运行
-CMD ["npm", "start"]
+# 暴露 Hugging Face Docker Space 默认端口
+# 应用实际监听端口仍由 SERVICE_PORT 控制
+EXPOSE 7860
+
+# 启动前自动从 HF Bucket 恢复数据，并在运行中后台同步
+ENTRYPOINT ["/app/docker/entrypoint.sh"]

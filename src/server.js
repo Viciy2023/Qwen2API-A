@@ -7,6 +7,7 @@ const { initSsxmodManager } = require('./utils/ssxmod-manager')
 const app = express()
 const path = require('path')
 const fs = require('fs')
+const paths = require('./utils/paths')
 const modelsRouter = require('./routes/models.js')
 const chatRouter = require('./routes/chat.js')
 const cliChatRouter = require('./routes/cli.chat.js')
@@ -15,8 +16,9 @@ const accountsRouter = require('./routes/accounts.js')
 const settingsRouter = require('./routes/settings.js')
 
 if (config.dataSaveMode === 'file') {
-  if (!fs.existsSync(path.join(__dirname, '../data/data.json'))) {
-    fs.writeFileSync(path.join(__dirname, '../data/data.json'), JSON.stringify({"accounts": [] }, null, 2))
+  if (!fs.existsSync(paths.dataFilePath)) {
+    fs.mkdirSync(paths.dataDir, { recursive: true })
+    fs.writeFileSync(paths.dataFilePath, JSON.stringify({"accounts": [] }, null, 2))
   }
 }
 

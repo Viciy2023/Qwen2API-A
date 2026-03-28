@@ -10,7 +10,7 @@ const { logger } = require('./logger')
  */
 class DataPersistence {
   constructor() {
-    this.dataFilePath = path.join(__dirname, '../../data/data.json')
+    this.dataFilePath = config.dataFilePath
   }
 
   /**

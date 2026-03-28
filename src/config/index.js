@@ -1,5 +1,6 @@
 const dotenv = require('dotenv')
 dotenv.config()
+const paths = require('../utils/paths')
 
 /**
  * 解析API_KEY环境变量，支持逗号分隔的多个key
@@ -35,9 +36,12 @@ const config = {
     cacheMode: process.env.CACHE_MODE || "default",
     logLevel: process.env.LOG_LEVEL || "INFO",
     enableFileLog: process.env.ENABLE_FILE_LOG === 'true',
-    logDir: process.env.LOG_DIR || "./logs",
+    logDir: paths.logDir,
     maxLogFileSize: parseInt(process.env.MAX_LOG_FILE_SIZE) || 10,
     maxLogFiles: parseInt(process.env.MAX_LOG_FILES) || 5,
+    dataDir: paths.dataDir,
+    cacheDir: paths.cacheDir,
+    dataFilePath: paths.dataFilePath,
     // 自定义反代URL配置
     qwenChatProxyUrl: process.env.QWEN_CHAT_PROXY_URL || "https://chat.qwen.ai",
     qwenCliProxyUrl: process.env.QWEN_CLI_PROXY_URL || "https://portal.qwen.ai",

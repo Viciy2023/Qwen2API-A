@@ -8,12 +8,16 @@ class imgCacheManager {
     this.cacheMap = new Map()
   }
 
+  getCachePath(signature) {
+    return path.join(config.cacheDir, `${signature}.txt`)
+  }
+
   cacheIsExist(signature) {
     try {
       if (config.cacheMode === 'default') {
         return this.cacheMap.has(signature)
       } else {
-        const cachePath = path.join(__dirname, '../../caches', `${signature}.txt`)
+        const cachePath = this.getCachePath(signature)
         return fs.existsSync(cachePath)
       }
     } catch (e) {
@@ -33,7 +37,8 @@ class imgCacheManager {
         if (config.cacheMode === 'default') {
           this.cacheMap.set(signature, url)
         } else {
-          const cachePath = path.join(__dirname, '../../caches', `${signature}.txt`)
+          const cachePath = this.getCachePath(signature)
+          fs.mkdirSync(config.cacheDir, { recursive: true })
           fs.writeFileSync(cachePath, url)
         }
 
@@ -48,7 +53,7 @@ class imgCacheManager {
 
   getCache(signature) {
     try {
-      const cachePath = path.join(__dirname, '../../caches', `${signature}.txt`)
+      const cachePath = this.getCachePath(signature)
       const isExist = this.cacheIsExist(signature)
 
       if (isExist) {

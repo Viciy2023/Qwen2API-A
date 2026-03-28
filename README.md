@@ -238,13 +238,187 @@ npm run dev
 
 ### ☁️ Hugging Face 部署
 
-快速部署到 Hugging Face Spaces：
+推荐使用 **Docker Space + GitHub 自动同步** 的方式部署。这个项目本身已经提供 `docker/Dockerfile`，因此在 Hugging Face 上使用 Docker Space 是最稳妥的方案。
 
 [![Deploy to Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Deploy-yellow)](https://huggingface.co/spaces/devme/q2waepnilm)
 
 <div>
 <img src="./docs/images/hf.png" alt="Hugging Face Deployment" width="600">
 </div>
+
+#### 推荐部署方式
+
+部署链路如下：
+
+```text
+本地修改代码 -> Push 到 GitHub main -> GitHub Actions 自动同步到 Hugging Face Space -> Hugging Face 自动重建并启动
+```
+
+#### 第一步：创建 Hugging Face Space
+
+- 在 Hugging Face 新建 Space
+- **SDK 请选择 `Docker`**
+- Space 名称示例：`DanielleNguyen/Qwen2API-A`
+
+#### 第二步：在 GitHub 配置自动同步变量
+
+仓库中已提供自动同步工作流：`.github/workflows/huggingface-sync.yml`
+
+请在 GitHub 仓库中配置以下内容：
+
+**GitHub Actions Secrets：**
+
+```bash
+HF_TOKEN=你的_huggingface_token
+```
+
+**GitHub Actions Variables：**
+
+```bash
+HF_SPACE_ID=DanielleNguyen/Qwen2API-A
+```
+
+配置位置：`GitHub 仓库 -> Settings -> Secrets and variables -> Actions`
+
+> ⚠️ 注意：`HF_TOKEN` 必须放在 `Secrets` 中，不要写入仓库文件，也不要提交到 `.env` 中。
+
+#### 第三步：在 Hugging Face Space 配置运行时变量
+
+进入：`Hugging Face Space -> Settings -> Variables and secrets`
+
+如果你采用 **HF Bucket 持久化**，建议至少配置以下变量：
+
+```bash
+SERVICE_PORT=7860
+LISTEN_ADDRESS=0.0.0.0
+PM2_INSTANCES=1
+PM2_MAX_MEMORY=4G
+NODE_ENV=production
+OUTPUT_THINK=true
+SEARCH_INFO_MODE=table
+SIMPLE_MODEL_MAP=false
+DATA_SAVE_MODE=file
+DATA_DIR=/data/qwen2api/data
+CACHE_DIR=/data/qwen2api/caches
+LOG_DIR=/data/qwen2api/logs
+HF_BUCKET_REPO=DanielleNguyen/Qwen2API-A-Storage
+HF_BUCKET_LOCAL_DIR=/data/qwen2api
+HF_BUCKET_REMOTE_DIR=runtime
+HF_BUCKET_SYNC_INTERVAL=300
+LOG_LEVEL=INFO
+ENABLE_FILE_LOG=false
+CACHE_MODE=file
+```
+
+建议作为 Secret 配置的敏感项：
+
+```bash
+API_KEY=sk-admin-yourkey,sk-user-yourkey
+HF_TOKEN=hf_xxx
+HF_BUCKET_TOKEN=
+REDIS_URL=
+ACCOUNTS=
+PROXY_URL=
+QWEN_CHAT_PROXY_URL=
+QWEN_CLI_PROXY_URL=
+```
+
+> 💡 项目中已提供 Hugging Face 示例模板：`.env.hf.example`
+
+#### 第四步：HF Bucket 持久化工作方式
+
+当前项目已适配如下持久化链路：
+
+```text
+容器启动 -> 从 HF Bucket 拉取 /data/qwen2api -> 应用用 file 模式读写本地文件 -> 后台定时同步回 HF Bucket
+```
+
+默认会持久化这些目录：
+
+```bash
+DATA_DIR=/data/qwen2api/data
+CACHE_DIR=/data/qwen2api/caches
+LOG_DIR=/data/qwen2api/logs
+```
+
+推荐的 Bucket 名称：
+
+```bash
+HF_BUCKET_REPO=DanielleNguyen/Qwen2API-A-Storage
+```
+
+#### 第五步：端口与监听地址说明
+
+为兼容 Hugging Face Docker Space，推荐固定使用：
+
+```bash
+SERVICE_PORT=7860
+LISTEN_ADDRESS=0.0.0.0
+```
+
+原因：
+
+- `7860` 是 Hugging Face Space 常见服务端口
+- `0.0.0.0` 可确保容器外部可以访问到服务
+- 项目实际启动端口由环境变量 `SERVICE_PORT` 控制
+
+#### 第六步：推送代码触发自动部署
+
+当你推送代码到 `main` 分支后：
+
+- GitHub Actions 会自动执行 `.github/workflows/huggingface-sync.yml`
+- 自动将仓库代码同步到 Hugging Face Space
+- Hugging Face 收到新代码后会自动重建容器并启动服务
+
+#### 推荐的 Hugging Face 配置
+
+如果你只是先跑通服务并启用 Bucket 持久化，建议使用：
+
+```bash
+SERVICE_PORT=7860
+LISTEN_ADDRESS=0.0.0.0
+PM2_INSTANCES=1
+DATA_SAVE_MODE=file
+CACHE_MODE=file
+DATA_DIR=/data/qwen2api/data
+CACHE_DIR=/data/qwen2api/caches
+LOG_DIR=/data/qwen2api/logs
+HF_BUCKET_REPO=DanielleNguyen/Qwen2API-A-Storage
+ENABLE_FILE_LOG=false
+```
+
+如果你要让运行数据真正可恢复，请再补上 Secret：
+
+```bash
+HF_TOKEN=你的_huggingface_token
+```
+
+> Space 访问 Bucket 时可以直接使用 Hugging Face 账号 Token。若你希望和 GitHub Actions 用途隔离，也可以额外配置 `HF_BUCKET_TOKEN` 专供 Bucket 读写使用。
+
+#### 常见问题
+
+**1. 为什么不建议在仓库里提交真实 `.env`？**
+
+因为 `API_KEY`、`HF_TOKEN`、`HF_BUCKET_TOKEN`、`REDIS_URL` 等都属于敏感信息，应该放在 GitHub Secrets 或 Hugging Face Secrets 中。
+
+**2. 为什么推荐 Docker Space？**
+
+因为本项目是完整的 Node.js 服务，并且已经自带 `docker/Dockerfile`，使用 Docker Space 可以直接复用现有构建和启动流程。
+
+**3. 如果 GitHub 已经配置了 `HF_TOKEN` 和 `HF_SPACE_ID`，还需要在 HF 里配置它们吗？**
+
+不需要。
+
+- `HF_TOKEN` 和 `HF_SPACE_ID` 只用于 **GitHub -> Hugging Face 同步代码**
+- Hugging Face Space 内只需要配置项目运行时环境变量，例如 `API_KEY`、`SERVICE_PORT`、`LISTEN_ADDRESS`
+
+**4. Space 怎么和 Bucket 通信？一定要单独的 `HF_BUCKET_TOKEN` 吗？**
+
+不一定。
+
+- 在 Hugging Face Space 里，运行时可以直接使用你的 Hugging Face 账号 Token，即 `HF_TOKEN`
+- 当前项目已兼容：优先读取 `HF_BUCKET_TOKEN`，如果没设置则自动回退到 `HF_TOKEN`
+- 如果你想把“GitHub 同步代码”和“Space 访问 Bucket”分开控制，可以单独再配 `HF_BUCKET_TOKEN`
 
 ---
 
