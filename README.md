@@ -1,3 +1,12 @@
+---
+title: Qwen2API-A
+emoji: 🚀
+colorFrom: blue
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
 <div align="center">
 
 # 🚀 Qwen-Proxy
