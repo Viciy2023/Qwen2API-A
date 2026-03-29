@@ -79,8 +79,8 @@
             </div>
 
       <!-- 分页控制区 -->
-      <div class="mb-3 flex flex-wrap justify-between gap-3 px-1">
-        <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+        <div class="flex items-center gap-2">
           <span>共 {{ totalItems }} 项</span>
           <button 
             @click="changePage(currentPage - 1)" 
@@ -104,11 +104,7 @@
             下一页
           </button>
         </div>
-      </div>
-
-      <!-- 多选操作区 -->
-      <div class="mb-4 flex flex-wrap justify-between gap-3 px-1">
-        <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+        <div class="flex flex-wrap items-center gap-3">
           <label class="inline-flex items-center cursor-pointer group">
             <div class="relative">
               <input type="checkbox" 
@@ -136,16 +132,16 @@
             </svg>
             <span>删除选中 ({{ selectedTokens.length }})</span>
           </button>
-        </div>
-        <button 
-          @click="showDeleteAllConfirm = true" 
-          class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200 flex items-center space-x-1 text-sm"
-        >
+          <button 
+            @click="showDeleteAllConfirm = true" 
+            class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200 flex items-center space-x-1 text-sm"
+          >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
           </svg>
           <span>删除全部账号</span>
-        </button>
+          </button>
+        </div>
       </div>
 
       <!-- Token列表 -->
@@ -417,7 +413,10 @@
                   <p class="mt-1 text-xs text-slate-500">按小时统计请求次数</p>
                 </div>
                 <div class="grid grid-cols-12 md:grid-cols-24 gap-2 items-end h-52 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div v-for="item in usageTrendData" :key="`requests-${item.hour}`" class="flex flex-col items-center justify-end gap-2 h-full">
+                  <div v-for="item in usageTrendData" :key="`requests-${item.hour}`" class="group relative flex h-full flex-col items-center justify-end gap-2">
+                    <div class="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-700 shadow-lg group-hover:block">
+                      {{ String(item.hour).padStart(2, '0') }}:00 · {{ item.requests }} 次
+                    </div>
                     <div class="w-full rounded-t-md bg-slate-900 min-h-[8px] shadow-[0_8px_20px_rgba(15,23,42,0.08)]" :style="{ height: item.requestHeight }"></div>
                     <div class="text-[10px] text-slate-400 tracking-wide">{{ String(item.hour).padStart(2, '0') }}</div>
                   </div>
@@ -430,7 +429,10 @@
                   <p class="mt-1 text-xs text-slate-500">按小时统计 Token 消耗</p>
                 </div>
                 <div class="grid grid-cols-12 md:grid-cols-24 gap-2 items-end h-52 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div v-for="item in usageTrendData" :key="`tokens-${item.hour}`" class="flex flex-col items-center justify-end gap-2 h-full">
+                  <div v-for="item in usageTrendData" :key="`tokens-${item.hour}`" class="group relative flex h-full flex-col items-center justify-end gap-2">
+                    <div class="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-700 shadow-lg group-hover:block">
+                      {{ String(item.hour).padStart(2, '0') }}:00 · {{ formatNumber(item.totalTokens) }} tokens
+                    </div>
                     <div class="w-full rounded-t-md bg-slate-500 min-h-[8px] shadow-[0_8px_20px_rgba(15,23,42,0.06)]" :style="{ height: item.tokenHeight }"></div>
                     <div class="text-[10px] text-slate-400 tracking-wide">{{ String(item.hour).padStart(2, '0') }}</div>
                   </div>
