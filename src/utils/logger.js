@@ -13,6 +13,8 @@ class Logger {
       level: options.level || 'INFO',
       // 是否启用文件日志
       enableFileLog: options.enableFileLog || false,
+      // 是否启用运行日志（控制台 + 内存日志）
+      enableRuntimeLog: options.enableRuntimeLog !== false,
       // 日志文件路径
       logDir: options.logDir || paths.logDir,
       // 日志文件名格式
@@ -81,6 +83,9 @@ class Logger {
     if (this.options.enableFileLog) {
       this.initLogDirectory()
     }
+
+    this.memoryLogs = []
+    this.maxMemoryLogs = options.maxMemoryLogs || 500
   }
 
   /**
@@ -102,7 +107,7 @@ class Logger {
    * @returns {boolean}
    */
   shouldLog(level) {
-    return this.levels[level] >= this.levels[this.options.level]
+    return this.options.enableRuntimeLog && this.levels[level] >= this.levels[this.options.level]
   }
 
   /**
@@ -174,6 +179,46 @@ class Logger {
     } catch (error) {
       console.error('写入日志文件失败:', error.message)
     }
+  }
+
+  pushMemoryLog(entry) {
+    this.memoryLogs.push({
+      id: Date.now() + Math.random(),
+      timestamp: new Date().toISOString(),
+      text: entry
+    })
+
+    if (this.memoryLogs.length > this.maxMemoryLogs) {
+      this.memoryLogs.splice(0, this.memoryLogs.length - this.maxMemoryLogs)
+    }
+  }
+
+  getMemoryLogs() {
+    return [...this.memoryLogs]
+  }
+
+  clearMemoryLogs() {
+    this.memoryLogs = []
+  }
+
+  setFileLogEnabled(enabled) {
+    this.options.enableFileLog = !!enabled
+
+    if (this.options.enableFileLog) {
+      this.initLogDirectory()
+    }
+  }
+
+  isFileLogEnabled() {
+    return !!this.options.enableFileLog
+  }
+
+  setRuntimeLogEnabled(enabled) {
+    this.options.enableRuntimeLog = !!enabled
+  }
+
+  isRuntimeLogEnabled() {
+    return !!this.options.enableRuntimeLog
   }
 
   /**
@@ -257,6 +302,9 @@ class Logger {
 
     // 文件输出
     this.writeToFile(fileMessage + (data ? `\n${JSON.stringify(data, null, 2)}` : ''))
+
+    // 内存缓冲，用于前端日志查看
+    this.pushMemoryLog(fileMessage + (data ? `\n${JSON.stringify(data, null, 2)}` : ''))
   }
 
   // 便捷方法
@@ -310,6 +358,7 @@ class Logger {
 const defaultLogger = new Logger({
   level: process.env.LOG_LEVEL || 'INFO',
   enableFileLog: process.env.ENABLE_FILE_LOG === 'true',
+  enableRuntimeLog: process.env.ENABLE_RUNTIME_LOG !== 'false',
   showModule: true,
   showTimestamp: true,
   showLevel: true

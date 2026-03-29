@@ -1,74 +1,53 @@
 <template>
   <div class="w-100vw h-100vh p-4 overflow-y-auto">
-    <div class="container mx-auto">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 px-4 space-y-4 md:space-y-0 pt-5">
-        <h1 class="text-4xl font-bold">Token Manager <span class="text-gray-500 text-sm">by 兜豆子</span></h1>
-        <div class="grid grid-cols-2 sm:flex sm:flex-row w-full md:w-auto gap-2 sm:gap-0 sm:space-x-2 lg:space-x-4">
-          <button @click="showAddModal = true"
-                  class="action-button font-bold border border-green-200 bg-green-50 text-green-900 px-4 py-2 rounded-xl shadow-sm hover:bg-green-100 hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
-            添加账号
-          </button>
-          <button @click="refreshAllAccounts"
-                  :disabled="isRefreshingAll"
-                  :class="[
-                    'action-button font-bold px-4 py-2 rounded-xl shadow-sm transition-all duration-300 transform active:translate-y-0',
-                    isRefreshingAll
-                      ? 'bg-purple-400 text-white border-purple-400 refreshing-button-purple cursor-not-allowed transform-none'
-                      : 'macaron-purple-button text-purple-800 hover:-translate-y-1'
-                  ]">
-            <span v-if="isRefreshingAll" class="flex items-center space-x-2">
-              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>刷新中...</span>
-            </span>
-            <span v-else>一键刷新</span>
-          </button>
-          <button @click="forceRefreshAllAccounts"
-                  :disabled="isForceRefreshingAll"
-                  :class="[
-                    'action-button font-bold px-4 py-2 rounded-xl shadow-sm transition-all duration-300 transform active:translate-y-0',
-                    isForceRefreshingAll
-                      ? 'bg-pink-400 text-white border-pink-400 refreshing-button-pink cursor-not-allowed transform-none'
-                      : 'macaron-pink-button text-pink-800 hover:-translate-y-1'
-                  ]">
-            <span v-if="isForceRefreshingAll" class="flex items-center space-x-2">
-              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>强制刷新中...</span>
-            </span>
-            <span v-else>强制刷新</span>
-          </button>
-          <button @click="exportAccounts"
-                  class="action-button font-bold border border-yellow-200 bg-yellow-50 text-yellow-900 px-4 py-2 rounded-xl shadow-sm hover:bg-yellow-100 hover:border-yellow-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
-            导出账号
-          </button>
-          <button @click="openModelsPanel"
-                  class="action-button font-bold border border-violet-200 bg-violet-50 text-violet-900 px-4 py-2 rounded-xl shadow-sm hover:bg-violet-100 hover:border-violet-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
-            可用模型
-          </button>
-          <router-link to="/settings"
-                        class="action-button col-span-2 sm:col-span-1 font-bold border border-blue-200 bg-blue-50 text-blue-900 px-4 py-2 rounded-xl shadow-sm hover:bg-blue-100 hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 text-center">
-            系统设置
-          </router-link>
-        </div>
-      </div>
+    <div class="container mx-auto pt-5">
+      <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside class="rounded-3xl border border-white/50 bg-white/70 p-5 shadow-xl backdrop-blur-lg h-fit lg:sticky lg:top-4">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-slate-800">Token Manager</h1>
+            <p class="mt-2 text-sm text-slate-500">左侧切换菜单，右侧查看对应内容</p>
+          </div>
+
+          <div class="space-y-3">
+            <button @click="setDashboardTab('accounts')" :class="getSidebarItemClass('accounts', 'emerald')">账号列表</button>
+            <button @click="showAddModal = true" :class="getActionSidebarClass('green')">添加账号</button>
+            <button @click="refreshAllAccounts" :disabled="isRefreshingAll" :class="getActionSidebarClass('purple', isRefreshingAll)">
+              {{ isRefreshingAll ? '一键刷新中...' : '一键刷新' }}
+            </button>
+            <button @click="forceRefreshAllAccounts" :disabled="isForceRefreshingAll" :class="getActionSidebarClass('pink', isForceRefreshingAll)">
+              {{ isForceRefreshingAll ? '强制刷新中...' : '强制刷新' }}
+            </button>
+            <button @click="exportAccounts" :class="getActionSidebarClass('yellow')">导出账号</button>
+            <button @click="openModelsPanel" :class="getSidebarItemClass('models', 'violet')">可用模型</button>
+            <button @click="openLogsPanel" :class="getSidebarItemClass('logs', 'slate')">日志查看</button>
+            <button @click="setDashboardTab('settings')" :class="getSidebarItemClass('settings', 'blue')">系统设置</button>
+          </div>
+        </aside>
+
+        <section class="rounded-3xl border border-white/50 bg-white/65 p-4 shadow-xl backdrop-blur-lg md:p-6">
+          <div v-if="activeDashboardTab === 'accounts'">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-800">账号列表</h2>
+                <p class="mt-2 text-sm text-slate-500">集中管理邮箱账号、令牌与批量操作</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                <span>共 {{ totalItems }} 个账号</span>
+                <div class="flex items-center gap-2">
+                  <span>每页显示</span>
+                  <select v-model="pageSize" @change="changePageSize" class="rounded-lg border-gray-300 bg-white/70 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300">
+                    <option :value="10">10</option>
+                    <option :value="20">20</option>
+                    <option :value="50">50</option>
+                    <option :value="100">100</option>
+                    <option :value="200">200</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
       <!-- 分页控制区 -->
-      <div class="flex justify-between items-center px-4 mb-4">
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-700">每页显示:</span>
-          <select v-model="pageSize" @change="changePageSize" class="rounded-lg border-gray-300 bg-white/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300">
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-            <option :value="200">200</option>
-          </select>
-        </div>
+      <div class="mb-4 flex flex-wrap justify-between gap-3 px-1">
         <div class="flex space-x-2 items-center">
           <span class="text-gray-700">共 {{ totalItems }} 项</span>
           <button 
@@ -96,7 +75,7 @@
       </div>
 
       <!-- 多选操作区 -->
-      <div class="flex justify-between items-center px-4 mb-4">
+      <div class="mb-4 flex flex-wrap justify-between gap-3 px-1">
         <div class="flex items-center space-x-3">
           <label class="inline-flex items-center cursor-pointer group">
             <div class="relative">
@@ -139,10 +118,10 @@
 
       <!-- Token列表 -->
       <div class="max-h-[calc(75vh)] overflow-y-auto pr-2 scrollbar-hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 p-1">
           <div v-for="token in displayedTokens" 
                :key="token.email" 
-               class="token-card group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-2xl pt-4"
+               class="token-card group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-2xl pt-3"
                :class="{'ring-2 ring-indigo-500 ring-opacity-75': isSelected(token.email)}">
             <div class="absolute top-3 left-3 z-10">
               <label class="custom-checkbox cursor-pointer">
@@ -158,43 +137,43 @@
               </label>
             </div>
             <div class="absolute inset-0 bg-white/30 backdrop-blur-md border border-white/30"></div>
-            <div class="relative p-6 flex flex-col gap-4">
-              <div class="flex flex-col space-y-3">
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1">
+            <div class="relative p-4 flex flex-col gap-3">
+              <div class="flex flex-col space-y-2">
+                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[96px] text-left font-semibold">📧 Email:</span>
+                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">📧 Email:</span>
                     <span class="font-medium whitespace-nowrap text-left">{{ token.email }}</span>
                   </div>
                   <button @click="copyToClipboard(token.email)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1">
+                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[96px] text-left font-semibold">🔑 Passwd:</span>
+                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">🔑 Passwd:</span>
                     <span class="font-medium whitespace-nowrap text-left">{{ token.password }}</span>
                   </div>
                   <button @click="copyToClipboard(token.password)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1">
+                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[96px] text-left font-semibold">🔐 Token:</span>
+                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">🔐 Token:</span>
                     <span class="font-medium whitespace-nowrap text-left text-sm">{{ token.token }}</span>
                   </div>
                   <button @click="copyToClipboard(token.token)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1">
+                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[96px] text-left font-semibold">⏰ Expire:</span>
-                    <span class="font-medium whitespace-nowrap text-left">{{ new Date(token.expires * 1000).toLocaleString() }}</span>
+                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">⏰ Expire:</span>
+                    <span class="font-medium whitespace-nowrap text-left text-sm">{{ new Date(token.expires * 1000).toLocaleString() }}</span>
                   </div>
                   <button @click="copyToClipboard(new Date(token.expires * 1000).toLocaleString())" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
                 </div>
               </div>
               
-              <div class="pt-4 mt-auto border-t border-gray-200/50 space-y-2">
+              <div class="pt-3 mt-auto border-t border-gray-200/50 grid grid-cols-2 gap-2">
                 <button @click="refreshToken(token.email)"
                         :disabled="refreshingTokens.includes(token.email)"
                         :class="[
-                          'w-full py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2',
+                          'w-full py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm',
                           refreshingTokens.includes(token.email)
                             ? 'bg-green-400 text-white refreshing-button-green cursor-not-allowed'
                             : 'macaron-green-button text-green-600 hover:bg-green-100 border border-green-200'
@@ -209,13 +188,175 @@
                   <span v-else>刷新令牌</span>
                 </button>
                 <button @click="deleteToken(token.email)"
-                        class="w-full group-hover:bg-red-50 text-red-600 py-2 rounded-lg transition-all duration-300 hover:bg-red-100">
+                        class="w-full group-hover:bg-red-50 text-red-600 py-2 rounded-lg transition-all duration-300 hover:bg-red-100 text-sm">
                   删除账号
                 </button>
               </div>
             </div>
           </div>
         </div>
+      </div>
+          </div>
+
+          <div v-else-if="activeDashboardTab === 'models'">
+            <div class="mb-6">
+              <h2 class="text-2xl font-bold text-slate-800">可用模型</h2>
+              <p class="mt-2 text-sm text-slate-500">查看当前实例全部模型，并按分类与强度筛选</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <span>共 {{ availableModels.length }} 个模型</span>
+                <button @click="setActiveModelFilter('all')" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', activeModelFilter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">全部 {{ availableModels.length }}</button>
+                <button @click="setActiveModelFilter('base')" :class="getFilterBadgeClass('base', 'bg-slate-100', 'text-slate-600', 'hover:bg-slate-200', 'bg-slate-700')">基础 {{ allModelGroups.base.length }}</button>
+                <button @click="setActiveModelFilter('thinking')" :class="getFilterBadgeClass('thinking', 'bg-amber-100', 'text-amber-700', 'hover:bg-amber-200', 'bg-amber-500')">Thinking {{ allModelGroups.thinking.length }}</button>
+                <button @click="setActiveModelFilter('search')" :class="getFilterBadgeClass('search', 'bg-cyan-100', 'text-cyan-700', 'hover:bg-cyan-200', 'bg-cyan-500')">Search {{ allModelGroups.search.length }}</button>
+                <button @click="setActiveModelFilter('image')" :class="getFilterBadgeClass('image', 'bg-rose-100', 'text-rose-700', 'hover:bg-rose-200', 'bg-rose-500')">Image {{ allModelGroups.image.length }}</button>
+                <button @click="setActiveModelFilter('video')" :class="getFilterBadgeClass('video', 'bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200', 'bg-indigo-500')">Video {{ allModelGroups.video.length }}</button>
+                <button @click="setActiveModelFilter('imageEdit')" :class="getFilterBadgeClass('imageEdit', 'bg-emerald-100', 'text-emerald-700', 'hover:bg-emerald-200', 'bg-emerald-500')">Image Edit {{ allModelGroups.imageEdit.length }}</button>
+              </div>
+              <div class="flex w-full sm:w-auto gap-2">
+                <div class="relative w-full sm:w-72">
+                  <input v-model="modelKeyword" type="text" placeholder="搜索模型 ID" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm focus:border-violet-400 focus:ring-violet-400 transition-all duration-300">
+                </div>
+                <button @click="refreshModels" :disabled="isLoadingModels" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 border', isLoadingModels ? 'bg-violet-200 text-violet-600 border-violet-200 cursor-not-allowed' : 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700']">{{ isLoadingModels ? '刷新中...' : '刷新模型列表' }}</button>
+              </div>
+            </div>
+
+            <div v-if="isLoadingModels" class="py-12 text-center text-slate-500">正在加载模型列表...</div>
+            <div v-else-if="modelsError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-red-600">
+              <div class="text-lg font-semibold">模型列表加载失败</div>
+              <div class="mt-2 text-sm whitespace-pre-line">{{ modelsError }}</div>
+              <button @click="refreshModels" class="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-all duration-300">重新加载</button>
+            </div>
+            <div v-else ref="modelsScrollContainer" class="max-h-[70vh] overflow-y-auto pr-2">
+              <div class="space-y-5">
+                <div v-for="group in groupedModelSections" :key="group.key" v-show="group.models.length" class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
+                  <div class="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 class="text-lg font-semibold text-slate-800">{{ group.title }}</h3>
+                      <p class="text-xs text-slate-500 mt-1">{{ group.description }}</p>
+                      <p class="mt-2 text-xs text-slate-400">当前分类已按模型强度从高到低排序</p>
+                    </div>
+                    <span :class="group.badgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">{{ group.models.length }} 个</span>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    <div v-for="model in group.models" :key="model.id" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                          <div class="font-semibold text-slate-800 break-all">{{ model.id }}</div>
+                          <div class="mt-2 text-xs text-slate-500 break-all">模型名称：{{ getModelDisplayName(model) }}</div>
+                          <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{{ model.owned_by || 'unknown' }}</span>
+                            <span v-if="modelTagSummary(model).length" class="rounded-full bg-violet-100 px-2 py-1 text-xs text-violet-700">{{ modelTagSummary(model).join(' / ') }}</span>
+                            <span class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">推荐：{{ getModelUseCase(model) }}</span>
+                            <div class="relative group/tooltip inline-flex">
+                              <span class="cursor-help rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">强度：{{ getModelPriorityLabel(model, group.key) }}</span>
+                              <div class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-64 rounded-2xl border border-amber-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-sm group-hover/tooltip:block">
+                                <div class="font-semibold text-amber-700">强度说明</div>
+                                <div class="mt-2 leading-5 whitespace-pre-line">{{ getModelPriorityTooltip(model, group.key) }}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <button @click="copyToClipboard(model.id)" class="rounded-lg bg-violet-100 px-2 py-2 text-sm text-violet-700 hover:bg-violet-200 transition-all duration-300">复制 ID</button>
+                        <button @click="copyToClipboard(getModelDisplayName(model))" class="rounded-lg bg-sky-100 px-2 py-2 text-sm text-sky-700 hover:bg-sky-200 transition-all duration-300">复制名字</button>
+                        <button @click="copyModelRequestExample(model)" class="col-span-2 sm:col-span-1 rounded-lg bg-amber-100 px-2 py-2 text-sm text-amber-700 hover:bg-amber-200 transition-all duration-300">复制示例</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="!filteredModelsByCategory.length" class="py-12 text-center text-slate-500">没有匹配的模型</div>
+            </div>
+          </div>
+
+          <div v-else-if="activeDashboardTab === 'logs'">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-800">运行日志</h2>
+                <p class="mt-2 text-sm text-slate-500">查看服务内存日志，支持手动刷新、自动刷新、复制、下载和清空</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button @click="fetchLogs" class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 transition-all duration-300">刷新日志</button>
+                <button @click="toggleAutoRefreshLogs" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300', logsAutoRefresh ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200']">
+                  {{ logsAutoRefresh ? '停止自动刷新' : '自动刷新' }}
+                </button>
+                <button @click="downloadLogs" class="rounded-xl bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-200 transition-all duration-300">下载日志</button>
+                <button @click="copyLogs" class="rounded-xl bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-200 transition-all duration-300">复制日志</button>
+                <button @click="clearLogs" class="rounded-xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200 transition-all duration-300">清空日志</button>
+              </div>
+            </div>
+
+            <div class="mb-4 grid gap-3 lg:grid-cols-[1fr_auto]">
+              <div class="flex flex-wrap items-center gap-3">
+                <select v-model="logsLevelFilter" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+                  <option value="ALL">全部级别</option>
+                  <option value="DEBUG">DEBUG</option>
+                  <option value="INFO">INFO</option>
+                  <option value="WARN">WARN</option>
+                  <option value="ERROR">ERROR</option>
+                </select>
+                <select v-model="logsModuleFilter" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+                  <option value="ALL">全部模块</option>
+                  <option value="SERVER">SERVER</option>
+                  <option value="ACCOUNT">ACCOUNT</option>
+                  <option value="CHAT">CHAT</option>
+                  <option value="CONFIG">CONFIG</option>
+                  <option value="CLI">CLI</option>
+                  <option value="SSXMOD">SSXMOD</option>
+                  <option value="INFO">INFO</option>
+                </select>
+                <select v-model="logsLimit" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+                  <option value="100">最近 100 条</option>
+                  <option value="200">最近 200 条</option>
+                  <option value="500">最近 500 条</option>
+                  <option value="ALL">全部</option>
+                </select>
+                <input v-model="logsKeyword" type="text" placeholder="搜索日志关键词" class="w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm">
+                  <span>运行日志</span>
+                  <button @click="toggleRuntimeLog" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', runtimeLogEnabled ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
+                    {{ runtimeLogEnabled ? '已启用' : '已关闭' }}
+                  </button>
+                </div>
+                <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm">
+                  <span>自动滚底</span>
+                  <button @click="logsAutoScroll = !logsAutoScroll" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', logsAutoScroll ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
+                    {{ logsAutoScroll ? '已开启' : '已关闭' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <span>当前日志条数：{{ logs.length }}</span>
+              <span>筛选后：{{ filteredLogs.length }}</span>
+              <span v-if="logsLastUpdated">最后刷新：{{ logsLastUpdated }}</span>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-950 text-slate-100 shadow-inner overflow-hidden">
+              <div ref="logsScrollContainer" class="max-h-[70vh] overflow-y-auto p-4 font-mono text-xs leading-6 whitespace-pre-wrap break-words">
+                <div v-if="isLoadingLogs" class="text-slate-400">正在加载日志...</div>
+                <div v-else-if="logsError" class="text-red-300">{{ logsError }}</div>
+                <div v-else-if="!logs.length" class="text-slate-500">当前没有可显示的日志</div>
+                <div v-else>{{ formattedLogs }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="rounded-3xl border border-blue-100 bg-blue-50/80 p-6">
+            <h2 class="text-2xl font-bold text-slate-800">系统设置</h2>
+            <p class="mt-3 text-sm leading-6 text-slate-600">系统设置仍使用独立页面管理。这里保留左右布局入口，点击下面按钮即可进入原设置页。</p>
+            <div class="mt-5">
+              <button @click="goToSettings" class="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-700">进入系统设置页</button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -314,170 +455,15 @@
       </div>
     </div>
 
-    <!-- 可用模型面板 -->
-    <div v-if="showModelsPanel"
-         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-         @click.self="showModelsPanel = false">
-      <div class="relative bg-white/90 backdrop-blur-lg rounded-2xl p-6 w-11/12 max-w-5xl max-h-[85vh] overflow-hidden transform transition-all duration-300 scale-100 opacity-100">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-2xl font-bold text-slate-800">可用模型</h2>
-            <p class="text-sm text-slate-500 mt-1">展示当前实例可直接调用的全部模型</p>
-          </div>
-          <button @click="showModelsPanel = false"
-                  class="px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all duration-300">
-            关闭
-          </button>
-        </div>
-
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-            <span>共 {{ availableModels.length }} 个模型</span>
-            <button @click="setActiveModelFilter('all')"
-                    :class="[
-                      'rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300',
-                      activeModelFilter === 'all'
-                        ? 'bg-slate-800 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    ]">
-              全部 {{ availableModels.length }}
-            </button>
-            <button @click="setActiveModelFilter('base')"
-                    :class="getFilterBadgeClass('base', 'bg-slate-100', 'text-slate-600', 'hover:bg-slate-200', 'bg-slate-700')">
-              基础 {{ allModelGroups.base.length }}
-            </button>
-            <button @click="setActiveModelFilter('thinking')"
-                    :class="getFilterBadgeClass('thinking', 'bg-amber-100', 'text-amber-700', 'hover:bg-amber-200', 'bg-amber-500')">
-              Thinking {{ allModelGroups.thinking.length }}
-            </button>
-            <button @click="setActiveModelFilter('search')"
-                    :class="getFilterBadgeClass('search', 'bg-cyan-100', 'text-cyan-700', 'hover:bg-cyan-200', 'bg-cyan-500')">
-              Search {{ allModelGroups.search.length }}
-            </button>
-            <button @click="setActiveModelFilter('image')"
-                    :class="getFilterBadgeClass('image', 'bg-rose-100', 'text-rose-700', 'hover:bg-rose-200', 'bg-rose-500')">
-              Image {{ allModelGroups.image.length }}
-            </button>
-            <button @click="setActiveModelFilter('video')"
-                    :class="getFilterBadgeClass('video', 'bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200', 'bg-indigo-500')">
-              Video {{ allModelGroups.video.length }}
-            </button>
-            <button @click="setActiveModelFilter('imageEdit')"
-                    :class="getFilterBadgeClass('imageEdit', 'bg-emerald-100', 'text-emerald-700', 'hover:bg-emerald-200', 'bg-emerald-500')">
-              Image Edit {{ allModelGroups.imageEdit.length }}
-            </button>
-          </div>
-          <div class="flex w-full sm:w-auto gap-2">
-            <div class="relative w-full sm:w-72">
-              <input v-model="modelKeyword"
-                     type="text"
-                     placeholder="搜索模型 ID"
-                     class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm focus:border-violet-400 focus:ring-violet-400 transition-all duration-300">
-            </div>
-            <button @click="refreshModels"
-                    :disabled="isLoadingModels"
-                    :class="[
-                      'rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 border',
-                      isLoadingModels
-                        ? 'bg-violet-200 text-violet-600 border-violet-200 cursor-not-allowed'
-                        : 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700'
-                    ]">
-              {{ isLoadingModels ? '刷新中...' : '刷新模型列表' }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="isLoadingModels" class="py-12 text-center text-slate-500">
-          正在加载模型列表...
-        </div>
-
-        <div v-else-if="modelsError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-red-600">
-          <div class="text-lg font-semibold">模型列表加载失败</div>
-          <div class="mt-2 text-sm whitespace-pre-line">{{ modelsError }}</div>
-          <button @click="refreshModels"
-                  class="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-all duration-300">
-            重新加载
-          </button>
-        </div>
-
-        <div v-else ref="modelsScrollContainer" class="max-h-[60vh] overflow-y-auto pr-2">
-          <div class="space-y-5">
-            <div v-for="group in groupedModelSections"
-                 :key="group.key"
-                 v-show="group.models.length"
-                 class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-800">{{ group.title }}</h3>
-                  <p class="text-xs text-slate-500 mt-1">{{ group.description }}</p>
-                  <p class="mt-2 text-xs text-slate-400">当前分类已按模型强度从高到低排序</p>
-                </div>
-                <span :class="group.badgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">
-                  {{ group.models.length }} 个
-                </span>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                <div v-for="model in group.models"
-                     :key="model.id"
-                     class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm hover:shadow-md transition-all duration-300">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0 flex-1">
-                      <div class="font-semibold text-slate-800 break-all">{{ model.id }}</div>
-                      <div class="mt-2 text-xs text-slate-500 break-all">模型名称：{{ getModelDisplayName(model) }}</div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{{ model.owned_by || 'unknown' }}</span>
-                        <span v-if="modelTagSummary(model).length"
-                              class="rounded-full bg-violet-100 px-2 py-1 text-xs text-violet-700">
-                          {{ modelTagSummary(model).join(' / ') }}
-                        </span>
-                        <span class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
-                          推荐：{{ getModelUseCase(model) }}
-                        </span>
-                        <div class="relative group/tooltip inline-flex">
-                          <span class="cursor-help rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
-                            强度：{{ getModelPriorityLabel(model, group.key) }}
-                          </span>
-                          <div class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-64 rounded-2xl border border-amber-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-sm group-hover/tooltip:block">
-                            <div class="font-semibold text-amber-700">强度说明</div>
-                            <div class="mt-2 leading-5 whitespace-pre-line">{{ getModelPriorityTooltip(model, group.key) }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <button @click="copyToClipboard(model.id)"
-                            class="rounded-lg bg-violet-100 px-2 py-2 text-sm text-violet-700 hover:bg-violet-200 transition-all duration-300">
-                      复制 ID
-                    </button>
-                    <button @click="copyToClipboard(getModelDisplayName(model))"
-                            class="rounded-lg bg-sky-100 px-2 py-2 text-sm text-sky-700 hover:bg-sky-200 transition-all duration-300">
-                      复制名字
-                    </button>
-                    <button @click="copyModelRequestExample(model)"
-                            class="col-span-2 sm:col-span-1 rounded-lg bg-amber-100 px-2 py-2 text-sm text-amber-700 hover:bg-amber-200 transition-all duration-300">
-                      复制示例
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!filteredModelsByCategory.length" class="py-12 text-center text-slate-500">
-            没有匹配的模型
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const tokens = ref([])
 const showAddModal = ref(false)
@@ -505,13 +491,26 @@ const showDeleteAllConfirm = ref(false)
 const isRefreshingAll = ref(false)
 const isForceRefreshingAll = ref(false)
 const refreshingTokens = ref([])
-const showModelsPanel = ref(false)
+const activeDashboardTab = ref('accounts')
 const availableModels = ref([])
 const isLoadingModels = ref(false)
 const modelsError = ref('')
 const modelKeyword = ref('')
 const activeModelFilter = ref('all')
 const modelsScrollContainer = ref(null)
+const logs = ref([])
+const isLoadingLogs = ref(false)
+const logsError = ref('')
+const logsAutoRefresh = ref(false)
+const logsLastUpdated = ref('')
+const logsLevelFilter = ref('ALL')
+const logsModuleFilter = ref('ALL')
+const logsKeyword = ref('')
+const logsLimit = ref('200')
+const runtimeLogEnabled = ref(true)
+const logsAutoScroll = ref(true)
+const logsScrollContainer = ref(null)
+let logsRefreshTimer = null
 
 // Toast 通知
 const toast = ref({
@@ -519,6 +518,32 @@ const toast = ref({
   message: '',
   type: 'success'
 })
+
+const filteredLogs = computed(() => {
+  const keyword = logsKeyword.value.trim().toLowerCase()
+
+  const matchedLogs = logs.value.filter(item => {
+    const text = item.text || ''
+    const upperText = text.toUpperCase()
+    const matchLevel = logsLevelFilter.value === 'ALL' || upperText.includes(`[${logsLevelFilter.value}]`)
+    const matchModule = logsModuleFilter.value === 'ALL' || upperText.includes(`[${logsModuleFilter.value}]`)
+    const matchKeyword = !keyword || text.toLowerCase().includes(keyword)
+    return matchLevel && matchModule && matchKeyword
+  })
+
+  if (logsLimit.value === 'ALL') {
+    return matchedLogs
+  }
+
+  const limit = parseInt(logsLimit.value, 10)
+  if (Number.isNaN(limit) || limit <= 0) {
+    return matchedLogs
+  }
+
+  return matchedLogs.slice(-limit)
+})
+
+const formattedLogs = computed(() => filteredLogs.value.map(item => item.text).join('\n'))
 
 const filteredModels = computed(() => {
   const keyword = modelKeyword.value.trim().toLowerCase()
@@ -690,6 +715,157 @@ const modelTagSummary = (model) => {
 
 const getModelDisplayName = (model) => {
   return model.id
+}
+
+const getSidebarItemClass = (tabKey, tone) => {
+  const activeMap = {
+    emerald: 'bg-emerald-600 text-white border-emerald-600 shadow-lg',
+    violet: 'bg-violet-600 text-white border-violet-600 shadow-lg',
+    blue: 'bg-blue-600 text-white border-blue-600 shadow-lg',
+    slate: 'bg-slate-700 text-white border-slate-700 shadow-lg'
+  }
+
+  const idleMap = {
+    emerald: 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100',
+    violet: 'bg-violet-50 text-violet-900 border-violet-200 hover:bg-violet-100',
+    blue: 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100',
+    slate: 'bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200'
+  }
+
+  return [
+    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-300',
+    activeDashboardTab.value === tabKey ? activeMap[tone] : idleMap[tone]
+  ]
+}
+
+const getActionSidebarClass = (tone, disabled = false) => {
+  const toneMap = {
+    green: 'bg-green-50 text-green-900 border-green-200 hover:bg-green-100',
+    purple: 'bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100',
+    pink: 'bg-pink-50 text-pink-900 border-pink-200 hover:bg-pink-100',
+    yellow: 'bg-yellow-50 text-yellow-900 border-yellow-200 hover:bg-yellow-100'
+  }
+
+  return [
+    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-300',
+    disabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 border-slate-200' : toneMap[tone]
+  ]
+}
+
+const setDashboardTab = (tabKey) => {
+  activeDashboardTab.value = tabKey
+}
+
+const goToSettings = () => {
+  router.push('/settings')
+}
+
+const fetchLogs = async () => {
+  isLoadingLogs.value = true
+  logsError.value = ''
+  try {
+    const response = await axios.get('/api/logs', {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+    logs.value = Array.isArray(response.data?.logs) ? response.data.logs : []
+    runtimeLogEnabled.value = response.data?.runtimeLogEnabled !== false
+    logsLastUpdated.value = new Date().toLocaleString()
+
+    if (logsAutoScroll.value) {
+      requestAnimationFrame(() => {
+        if (logsScrollContainer.value) {
+          logsScrollContainer.value.scrollTop = logsScrollContainer.value.scrollHeight
+        }
+      })
+    }
+  } catch (error) {
+    console.error('获取日志失败:', error)
+    logsError.value = error.response?.data?.error || error.message || '获取日志失败'
+  } finally {
+    isLoadingLogs.value = false
+  }
+}
+
+const stopLogsAutoRefresh = () => {
+  if (logsRefreshTimer) {
+    clearInterval(logsRefreshTimer)
+    logsRefreshTimer = null
+  }
+  logsAutoRefresh.value = false
+}
+
+const toggleAutoRefreshLogs = async () => {
+  if (logsAutoRefresh.value) {
+    stopLogsAutoRefresh()
+    showToast('已停止自动刷新日志')
+    return
+  }
+
+  await fetchLogs()
+  logsAutoRefresh.value = true
+  logsRefreshTimer = setInterval(fetchLogs, 5000)
+  showToast('已开启自动刷新日志')
+}
+
+const downloadLogs = () => {
+  const content = formattedLogs.value
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `qwen2api-logs-${Date.now()}.txt`
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, 100)
+  showToast('日志已下载')
+}
+
+const copyLogs = async () => {
+  await copyToClipboard(formattedLogs.value || '当前没有日志')
+}
+
+const clearLogs = async () => {
+  try {
+    await axios.post('/api/logs/clear', {}, {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+    logs.value = []
+    logsLastUpdated.value = new Date().toLocaleString()
+    showToast('日志已清空')
+  } catch (error) {
+    console.error('清空日志失败:', error)
+    showToast('清空日志失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const toggleRuntimeLog = async () => {
+  try {
+    const response = await axios.post('/api/logs/runtime-log', {
+      enabled: !runtimeLogEnabled.value
+    }, {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+
+    runtimeLogEnabled.value = response.data?.runtimeLogEnabled !== false
+    showToast(response.data?.message || '运行日志开关已更新')
+  } catch (error) {
+    console.error('切换运行日志失败:', error)
+    showToast('切换运行日志失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const openLogsPanel = async () => {
+  activeDashboardTab.value = 'logs'
+  await fetchLogs()
 }
 
 const setActiveModelFilter = (filterKey) => {
@@ -1178,7 +1354,7 @@ const refreshModels = async () => {
 }
 
 const openModelsPanel = async () => {
-  showModelsPanel.value = true
+  activeDashboardTab.value = 'models'
   modelKeyword.value = ''
   activeModelFilter.value = 'all'
 

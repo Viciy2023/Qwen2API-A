@@ -158,4 +158,67 @@ router.post('/simple-model-map', adminKeyVerify, async (req, res) => {
   }
 })
 
+router.get('/logs', adminKeyVerify, async (req, res) => {
+  try {
+    res.json({
+      logs: logger.getMemoryLogs(),
+      fileLogEnabled: logger.isFileLogEnabled(),
+      runtimeLogEnabled: logger.isRuntimeLogEnabled()
+    })
+  } catch (error) {
+    logger.error('读取日志失败', 'CONFIG', '', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.post('/logs/clear', adminKeyVerify, async (req, res) => {
+  try {
+    logger.clearMemoryLogs()
+    res.json({ message: '日志已清空' })
+  } catch (error) {
+    logger.error('清空日志失败', 'CONFIG', '', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.post('/logs/file-log', adminKeyVerify, async (req, res) => {
+  try {
+    const { enabled } = req.body
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled 必须是布尔值' })
+    }
+
+    logger.setFileLogEnabled(enabled)
+
+    res.json({
+      message: enabled ? '已启用文件日志' : '已关闭文件日志',
+      fileLogEnabled: logger.isFileLogEnabled()
+    })
+  } catch (error) {
+    logger.error('切换文件日志失败', 'CONFIG', '', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.post('/logs/runtime-log', adminKeyVerify, async (req, res) => {
+  try {
+    const { enabled } = req.body
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled 必须是布尔值' })
+    }
+
+    logger.setRuntimeLogEnabled(enabled)
+
+    res.json({
+      message: enabled ? '已启用运行日志' : '已关闭运行日志',
+      runtimeLogEnabled: logger.isRuntimeLogEnabled()
+    })
+  } catch (error) {
+    logger.error('切换运行日志失败', 'CONFIG', '', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 module.exports = router
