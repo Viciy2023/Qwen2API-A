@@ -7,17 +7,94 @@ sdk: docker
 pinned: false
 ---
 
+
+## ✨ 本次重构亮点
+
+当前仓库在保留原项目能力的基础上，已经完成一轮面向生产使用的管理后台重构与增强，重点集中在 **控制台体验**、**可观测性** 和 **Hugging Face 部署适配**。
+
+#### 控制台界面预览
+
+第一组：整体仪表盘与左侧导航布局
+
 <div align="center">
-
-# 🚀 Qwen-Proxy
-
-[![Version](https://img.shields.io/badge/version-2026.03.04.10.58-blue.svg)](https://github.com/Rfym21/Qwen2API)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![Docker](https://img.shields.io/badge/Docker-supported-blue.svg)](https://hub.docker.com/r/rfym21/qwen2api)
-
-[🔗 加入交流群](https://t.me/nodejs_project) | [📖 文档](#api-文档) | [🐳 Docker 部署](#docker-部署)
-
+  <img src="docs/images/image-1.png" alt="控制台界面预览 1" width="48%" />
+  <img src="docs/images/image-2.png" alt="控制台界面预览 2" width="48%" />
 </div>
+
+第二组：模型面板、日志面板与统计能力展示
+
+<div align="center">
+  <img src="docs/images/image-3.png" alt="控制台界面预览 3" width="48%" />
+  <img src="docs/images/image-4.png" alt="控制台界面预览 4" width="48%" />
+</div>
+
+第三组：控制台顶部状态栏与细节交互展示
+
+<div align="center">
+  <img src="docs/images/image-5.png" alt="控制台界面预览 5" width="72%" />
+</div>
+
+### 新控制台能力
+
+- 全站管理后台已重构为更统一的 **Vercel 风格控制台 UI**
+- 仪表盘从顶部按钮区改为 **左侧导航 + 右侧内容区** 的控制台布局
+- 顶部新增统一标题栏，支持：
+  - 项目标题 `Qwen2API Token Manager`
+  - 当前站点连接状态显示
+  - 自动读取当前服务 URL
+  - 一键刷新连接状态
+  - 一键退出登录
+- 可用模型面板支持：
+  - 分类浏览
+  - 强度排序
+  - 推荐用途提示
+  - 模型 ID / 名称 / OpenAI 请求示例一键复制
+- 系统设置已并入主控制台右侧区域，不再依赖独立页面跳转
+
+### 新增运维与统计能力
+
+- 新增 **日志查看面板**，支持：
+  - 刷新日志
+  - 自动刷新
+  - 下载日志
+  - 复制日志
+  - 清空日志
+  - 日志级别筛选
+  - 模块筛选
+  - 关键词搜索
+  - 最近 N 条查看
+  - 运行日志启用/关闭
+  - 自动滚动到底部
+- 新增 **使用统计面板**，支持：
+  - 总请求数 / 成功数 / 失败数 / 总 Token / 成功率
+  - 今日请求 / 今日 Token
+  - 各模型请求统计
+  - 按总 Token 排序
+  - 按请求次数排序
+  - 仅看今天
+  - 仅看失败模型
+  - 模型关键字搜索
+  - 今日请求趋势图
+  - 今日 Token 趋势图
+
+### 新增部署与数据能力
+
+- 已适配 **Hugging Face Docker Space** 部署
+- 已支持 **GitHub -> Hugging Face Space 自动同步**
+- 已支持 **HF Bucket 持久化**：
+  - 启动时自动恢复数据
+  - 运行中自动同步数据
+- 已支持：
+  - `DATA_DIR`
+  - `CACHE_DIR`
+  - `LOG_DIR`
+  这些目录级环境变量配置
+
+### 文档说明
+
+- 原始文档内容已完整保存在：`README.original.md`
+- 当前 `README.md` 为增强版说明文档
+- 原作者相关链接、技术参数、部署说明与 API 文档仍然保留
 
 ## 🛠️ 快速开始
 
