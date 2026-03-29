@@ -438,6 +438,10 @@
               </div>
             </div>
 
+            <div v-if="usageStatsFilePath" class="mb-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-500">
+              当前统计文件路径：<span class="font-mono text-slate-700 break-all">{{ usageStatsFilePath }}</span>
+            </div>
+
             <div class="rounded-3xl border border-slate-200 bg-white/80 shadow-sm overflow-hidden">
               <div class="max-h-[60vh] overflow-auto">
                 <table class="min-w-full text-sm">
@@ -733,6 +737,7 @@ const usageSortBy = ref('totalTokens')
 const usageKeyword = ref('')
 const usageOnlyToday = ref(false)
 const usageOnlyFailed = ref(false)
+const usageStatsFilePath = ref('')
 let logsRefreshTimer = null
 
 // Toast 通知
@@ -1073,6 +1078,7 @@ const fetchUsageStats = async () => {
     })
     usageSummary.value = response.data?.summary || usageSummary.value
     usageModels.value = Array.isArray(response.data?.models) ? response.data.models : []
+    usageStatsFilePath.value = response.data?.filePath || ''
   } catch (error) {
     console.error('获取使用统计失败:', error)
     usageStatsError.value = error.response?.data?.error || error.message || '获取使用统计失败'
