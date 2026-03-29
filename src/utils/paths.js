@@ -16,5 +16,6 @@ module.exports = {
   dataDir,
   cacheDir,
   logDir,
-  dataFilePath: path.join(dataDir, 'data.json')
+  dataFilePath: path.join(dataDir, 'data.json'),
+  usageStatsFilePath: path.join(dataDir, 'usage-stats.json')
 }

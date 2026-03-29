@@ -5,6 +5,7 @@ const accountManager = require('../utils/account.js')
 const config = require('../config/index.js')
 const axios = require('axios')
 const { logger } = require('../utils/logger')
+const usageStats = require('../utils/usage-stats')
 
 /**
  * 设置响应头
@@ -218,6 +219,7 @@ const handleStreamResponse = async (res, response, enable_thinking, enable_web_s
                 // 发送结束标记
                 res.write(`data: [DONE]\n\n`)
                 res.end()
+                await usageStats.track({ model: requestBody?.model, success: true, usage: totalTokens })
             } catch (e) {
                 logger.error('流式响应处理错误', 'CHAT', '', e)
                 res.status(500).json({ error: "服务错误!!!" })
@@ -392,8 +394,10 @@ const handleNonStreamResponse = async (res, response, enable_thinking, enable_we
             "usage": totalTokens
         }
         res.json(bodyTemplate)
+        await usageStats.track({ model, success: true, usage: totalTokens })
     } catch (error) {
         logger.error('非流式聊天处理错误', 'CHAT', '', error)
+        await usageStats.track({ model, success: false, usage: { total_tokens: 0 } })
         res.status(500)
             .json({
                 error: "服务错误!!!"
@@ -417,6 +421,7 @@ const handleChatCompletion = async (req, res) => {
         const response_data = await sendChatRequest(req.body)
 
         if (!response_data.status || !response_data.response) {
+            await usageStats.track({ model, success: false, usage: { total_tokens: 0 } })
             res.status(500)
                 .json({
                     error: "请求发送失败！！！"
@@ -434,6 +439,7 @@ const handleChatCompletion = async (req, res) => {
 
     } catch (error) {
         logger.error('聊天处理错误', 'CHAT', '', error)
+        await usageStats.track({ model, success: false, usage: { total_tokens: 0 } })
         res.status(500)
             .json({
                 error: "token无效,请求发送失败！！！"

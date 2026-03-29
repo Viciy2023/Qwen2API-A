@@ -1,15 +1,24 @@
 <template>
-  <div class="flex flex-col items-center justify-center w-screen h-screen">
+  <div class="flex min-h-screen items-center justify-center px-4 py-10">
     <transition name="fade-slide">
       <div
-        class="flex flex-col items-center w-4/5 h-1/2 bg-opacity-50 bg-white rounded-3xl shadow-xl border-2 border-gray-200 animate-panel"
+        class="vc-shell w-full max-w-xl p-8 md:p-10"
         v-if="showPanel">
-        <h1 class="block mt-24 mb-10 text-2xl font-bold">管理员身份验证</h1>
-        <input type="text"
-          class="w-4/5 h-16 rounded-2xl bg-opacity-80 bg-white border-2 border-gray-100 pl-10 placeholder:text-gray-500 focus:shadow-lg focus:scale-105 transition-all duration-300"
-          placeholder="请输入管理员账号" v-model="apiKey" @keyup.enter="handleLogin">
-        <button class="mt-10 w-4/5 h-16 rounded-2xl bg-opacity-65 border-2 border-black bg-black text-white transition-transform duration-200 active:scale-95 hover:scale-105"
-          @click="handleLogin">登录</button>
+        <div class="mb-8">
+          <div class="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">Qwen2API Admin</div>
+          <h1 class="vc-title mt-5">管理员身份验证</h1>
+          <p class="vc-subtitle mt-3">输入管理员 API Key 进入控制台。整个界面已切换为更简洁的控制台风格。</p>
+        </div>
+
+        <div class="space-y-4">
+          <input type="text"
+            class="vc-input h-14"
+            placeholder="请输入管理员账号"
+            v-model="apiKey"
+            @keyup.enter="handleLogin">
+          <button class="vc-button-primary h-14 w-full rounded-2xl text-base"
+            @click="handleLogin">登录</button>
+        </div>
       </div>
     </transition>
   </div>

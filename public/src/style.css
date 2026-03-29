@@ -1,3 +1,91 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --app-bg: #fafafa;
+    --app-surface: rgba(255, 255, 255, 0.86);
+    --app-surface-strong: rgba(255, 255, 255, 0.96);
+    --app-border: rgba(15, 23, 42, 0.08);
+    --app-text: #0f172a;
+    --app-muted: #64748b;
+    --app-shadow: 0 12px 40px rgba(15, 23, 42, 0.06);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #app {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--app-bg);
+    color: var(--app-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .vc-shell {
+    @apply rounded-[28px] border backdrop-blur-xl;
+    background: var(--app-surface);
+    border-color: var(--app-border);
+    box-shadow: var(--app-shadow);
+  }
+
+  .vc-panel {
+    @apply rounded-3xl border bg-white/90;
+    border-color: var(--app-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .vc-title {
+    @apply text-3xl font-semibold tracking-tight text-slate-950;
+  }
+
+  .vc-subtitle {
+    @apply text-sm leading-6 text-slate-500;
+  }
+
+  .vc-button {
+    @apply inline-flex items-center justify-center rounded-2xl border px-4 py-2.5 text-sm font-medium transition-all duration-200;
+    border-color: var(--app-border);
+  }
+
+  .vc-button-primary {
+    @apply vc-button bg-slate-950 text-white hover:bg-slate-800;
+    border-color: #020617;
+  }
+
+  .vc-button-secondary {
+    @apply vc-button bg-white text-slate-700 hover:bg-slate-50;
+  }
+
+  .vc-input {
+    @apply w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 shadow-sm outline-none transition-all duration-200;
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+
+  .vc-input:focus {
+    border-color: rgba(15, 23, 42, 0.24);
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
+  }
+}

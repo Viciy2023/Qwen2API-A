@@ -1,13 +1,44 @@
 <template>
   <div class="w-100vw h-100vh p-4 overflow-y-auto">
     <div class="container mx-auto pt-5">
-      <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside class="rounded-3xl border border-white/50 bg-white/70 p-5 shadow-xl backdrop-blur-lg h-fit lg:sticky lg:top-4">
-          <div class="mb-6">
-            <h1 class="text-3xl font-bold text-slate-800">Token Manager</h1>
-            <p class="mt-2 text-sm text-slate-500">左侧切换菜单，右侧查看对应内容</p>
-          </div>
+      <div class="vc-shell mb-6 flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="vc-title text-[28px]">Qwen2API Token Manager</h1>
+          <p class="vc-subtitle mt-1">统一管理账号、模型、统计、日志与系统设置</p>
+        </div>
 
+        <div class="flex flex-1 items-center justify-center">
+          <div class="flex max-w-2xl flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-600 shadow-sm">
+            <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold', connectionStatus === 'connected' ? 'bg-slate-950 text-white' : connectionStatus === 'checking' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500']">
+              <span :class="[
+                'h-2 w-2 rounded-full',
+                connectionStatus === 'connected'
+                  ? 'bg-emerald-400 animate-pulse'
+                  : connectionStatus === 'checking'
+                    ? 'bg-slate-400 animate-pulse'
+                    : 'bg-slate-400'
+              ]"></span>
+              {{ connectionStatusLabel }}
+            </span>
+            <span class="break-all text-slate-500">{{ siteBaseUrl }}</span>
+            <button @click="copyToClipboard(siteBaseUrl)" class="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50" title="复制当前站点地址">
+              复制 URL
+            </button>
+            <button @click="refreshConnectionStatus" :disabled="isCheckingConnection" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-all duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" title="刷新连接状态">
+              <svg :class="['h-4 w-4', isCheckingConnection ? 'animate-spin' : '']" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m14.836 2A8.001 8.001 0 005.582 9m0 0H9m11 11v-5h-.581m0 0A8.003 8.003 0 016.582 15m13.418 0H15" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button @click="logout" class="vc-button-secondary whitespace-nowrap">退出登录</button>
+        </div>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside class="vc-shell h-fit p-5 lg:sticky lg:top-4">
           <div class="space-y-3">
             <button @click="setDashboardTab('accounts')" :class="getSidebarItemClass('accounts', 'emerald')">账号列表</button>
             <button @click="showAddModal = true" :class="getActionSidebarClass('green')">添加账号</button>
@@ -19,23 +50,24 @@
             </button>
             <button @click="exportAccounts" :class="getActionSidebarClass('yellow')">导出账号</button>
             <button @click="openModelsPanel" :class="getSidebarItemClass('models', 'violet')">可用模型</button>
+            <button @click="openUsagePanel" :class="getSidebarItemClass('usage', 'amber')">使用统计</button>
             <button @click="openLogsPanel" :class="getSidebarItemClass('logs', 'slate')">日志查看</button>
             <button @click="setDashboardTab('settings')" :class="getSidebarItemClass('settings', 'blue')">系统设置</button>
           </div>
         </aside>
 
-        <section class="rounded-3xl border border-white/50 bg-white/65 p-4 shadow-xl backdrop-blur-lg md:p-6">
+        <section class="vc-shell p-4 md:p-6">
           <div v-if="activeDashboardTab === 'accounts'">
-            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <h2 class="text-2xl font-bold text-slate-800">账号列表</h2>
                 <p class="mt-2 text-sm text-slate-500">集中管理邮箱账号、令牌与批量操作</p>
               </div>
-              <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                 <span>共 {{ totalItems }} 个账号</span>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5">
                   <span>每页显示</span>
-                  <select v-model="pageSize" @change="changePageSize" class="rounded-lg border-gray-300 bg-white/70 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300">
+                  <select v-model="pageSize" @change="changePageSize" class="rounded-lg border-none bg-transparent py-0 pr-6 text-sm text-slate-700 shadow-none focus:ring-0">
                     <option :value="10">10</option>
                     <option :value="20">20</option>
                     <option :value="50">50</option>
@@ -47,26 +79,26 @@
             </div>
 
       <!-- 分页控制区 -->
-      <div class="mb-4 flex flex-wrap justify-between gap-3 px-1">
-        <div class="flex space-x-2 items-center">
-          <span class="text-gray-700">共 {{ totalItems }} 项</span>
+      <div class="mb-3 flex flex-wrap justify-between gap-3 px-1">
+        <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+          <span>共 {{ totalItems }} 项</span>
           <button 
             @click="changePage(currentPage - 1)" 
             :disabled="currentPage === 1" 
             :class="[
-              'px-3 py-1 rounded-lg transition-all duration-300', 
-              currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+              'px-3 py-1 rounded-lg transition-all duration-200 text-sm', 
+              currentPage === 1 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
             ]"
           >
             上一页
           </button>
-          <span class="text-gray-700">{{ currentPage }}/{{ totalPages }}</span>
+          <span>{{ currentPage }}/{{ totalPages }}</span>
           <button 
             @click="changePage(currentPage + 1)" 
             :disabled="currentPage === totalPages || totalPages === 0" 
             :class="[
-              'px-3 py-1 rounded-lg transition-all duration-300', 
-              currentPage === totalPages || totalPages === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+              'px-3 py-1 rounded-lg transition-all duration-200 text-sm', 
+              currentPage === totalPages || totalPages === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
             ]"
           >
             下一页
@@ -76,27 +108,27 @@
 
       <!-- 多选操作区 -->
       <div class="mb-4 flex flex-wrap justify-between gap-3 px-1">
-        <div class="flex items-center space-x-3">
+        <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
           <label class="inline-flex items-center cursor-pointer group">
             <div class="relative">
               <input type="checkbox" 
                     v-model="selectAll" 
                     @change="toggleSelectAll" 
                     class="sr-only peer">
-              <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-lg peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all duration-300 flex items-center justify-center">
+              <div class="w-6 h-6 bg-white border-2 border-slate-300 rounded-lg peer-checked:bg-slate-950 peer-checked:border-slate-950 transition-all duration-300 flex items-center justify-center">
                 <svg v-show="selectAll" class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </div>
             </div>
-            <span class="ml-2 text-gray-700 group-hover:text-indigo-700 transition-colors duration-200">全选</span>
+            <span class="ml-2 text-slate-700 group-hover:text-slate-950 transition-colors duration-200">全选</span>
           </label>
           <button 
             @click="deleteSelected" 
             :disabled="selectedTokens.length === 0" 
             :class="[
               'px-4 py-1.5 rounded-lg transition-all duration-300 border flex items-center space-x-1', 
-              selectedTokens.length === 0 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+              selectedTokens.length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             ]"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -107,7 +139,7 @@
         </div>
         <button 
           @click="showDeleteAllConfirm = true" 
-          class="px-4 py-1.5 rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-300 flex items-center space-x-1"
+          class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200 flex items-center space-x-1 text-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -121,51 +153,51 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 p-1">
           <div v-for="token in displayedTokens" 
                :key="token.email" 
-               class="token-card group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-2xl pt-3"
-               :class="{'ring-2 ring-indigo-500 ring-opacity-75': isSelected(token.email)}">
+               class="token-card group relative overflow-hidden rounded-2xl transition-all duration-300 pt-3"
+               :class="{'ring-2 ring-slate-900 ring-opacity-20': isSelected(token.email)}">
             <div class="absolute top-3 left-3 z-10">
               <label class="custom-checkbox cursor-pointer">
                 <input type="checkbox" 
                        :checked="isSelected(token.email)" 
                        @change="toggleSelect(token.email)"
                        class="sr-only peer">
-                <div class="checkbox-icon w-6 h-6 bg-white/70 backdrop-blur-sm border-2 border-gray-300 rounded-lg peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow">
+                <div class="checkbox-icon w-6 h-6 bg-white/90 backdrop-blur-sm border-2 border-slate-300 rounded-lg peer-checked:bg-slate-950 peer-checked:border-slate-950 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow">
                   <svg v-show="isSelected(token.email)" class="w-4 h-4 text-white transform scale-0 peer-checked:scale-100 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
               </label>
             </div>
-            <div class="absolute inset-0 bg-white/30 backdrop-blur-md border border-white/30"></div>
+            <div class="absolute inset-0 bg-white/55 backdrop-blur-md border border-white/40"></div>
             <div class="relative p-4 flex flex-col gap-3">
               <div class="flex flex-col space-y-2">
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
+                <div class="relative flex items-center rounded-xl border border-slate-200 bg-slate-50/90 px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">📧 Email:</span>
+                    <span class="text-slate-500 min-w-[74px] text-left text-xs font-semibold tracking-wide">EMAIL</span>
                     <span class="font-medium whitespace-nowrap text-left">{{ token.email }}</span>
                   </div>
-                  <button @click="copyToClipboard(token.email)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
+                  <button @click="copyToClipboard(token.email)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity rounded-lg border border-slate-200 bg-white px-2 py-1 text-base hover:bg-slate-100">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
+                <div class="relative flex items-center rounded-xl border border-slate-200 bg-slate-50/90 px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">🔑 Passwd:</span>
+                    <span class="text-slate-500 min-w-[74px] text-left text-xs font-semibold tracking-wide">PASSWD</span>
                     <span class="font-medium whitespace-nowrap text-left">{{ token.password }}</span>
                   </div>
-                  <button @click="copyToClipboard(token.password)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
+                  <button @click="copyToClipboard(token.password)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity rounded-lg border border-slate-200 bg-white px-2 py-1 text-base hover:bg-slate-100">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
+                <div class="relative flex items-center rounded-xl border border-slate-200 bg-slate-50/90 px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">🔐 Token:</span>
+                    <span class="text-slate-500 min-w-[74px] text-left text-xs font-semibold tracking-wide">TOKEN</span>
                     <span class="font-medium whitespace-nowrap text-left text-sm">{{ token.token }}</span>
                   </div>
-                  <button @click="copyToClipboard(token.token)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
+                  <button @click="copyToClipboard(token.token)" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity rounded-lg border border-slate-200 bg-white px-2 py-1 text-base hover:bg-slate-100">📋</button>
                 </div>
-                <div class="relative flex items-center bg-blue-50/80 rounded-lg px-2 py-1.5">
+                <div class="relative flex items-center rounded-xl border border-slate-200 bg-slate-50/90 px-2 py-1.5">
                   <div class="overflow-x-auto scrollbar-hide flex-1 flex items-center space-x-2">
-                    <span class="text-gray-700 min-w-[74px] text-left text-sm font-semibold">⏰ Expire:</span>
+                    <span class="text-slate-500 min-w-[74px] text-left text-xs font-semibold tracking-wide">EXPIRE</span>
                     <span class="font-medium whitespace-nowrap text-left text-sm">{{ new Date(token.expires * 1000).toLocaleString() }}</span>
                   </div>
-                  <button @click="copyToClipboard(new Date(token.expires * 1000).toLocaleString())" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity bg-blue-200 hover:bg-blue-300 rounded px-2 py-1 text-base">📋</button>
+                  <button @click="copyToClipboard(new Date(token.expires * 1000).toLocaleString())" class="absolute right-2 opacity-0 hover:opacity-100 transition-opacity rounded-lg border border-slate-200 bg-white px-2 py-1 text-base hover:bg-slate-100">📋</button>
                 </div>
               </div>
               
@@ -173,10 +205,10 @@
                 <button @click="refreshToken(token.email)"
                         :disabled="refreshingTokens.includes(token.email)"
                         :class="[
-                          'w-full py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm',
+                          'w-full py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm border',
                           refreshingTokens.includes(token.email)
                             ? 'bg-green-400 text-white refreshing-button-green cursor-not-allowed'
-                            : 'macaron-green-button text-green-600 hover:bg-green-100 border border-green-200'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                         ]">
                   <span v-if="refreshingTokens.includes(token.email)" class="flex items-center space-x-2">
                     <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -188,7 +220,7 @@
                   <span v-else>刷新令牌</span>
                 </button>
                 <button @click="deleteToken(token.email)"
-                        class="w-full group-hover:bg-red-50 text-red-600 py-2 rounded-lg transition-all duration-300 hover:bg-red-100 text-sm">
+                        class="w-full border border-slate-200 bg-white text-slate-700 py-2 rounded-lg transition-all duration-300 hover:bg-slate-50 text-sm">
                   删除账号
                 </button>
               </div>
@@ -207,53 +239,53 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
                 <span>共 {{ availableModels.length }} 个模型</span>
-                <button @click="setActiveModelFilter('all')" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', activeModelFilter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">全部 {{ availableModels.length }}</button>
-                <button @click="setActiveModelFilter('base')" :class="getFilterBadgeClass('base', 'bg-slate-100', 'text-slate-600', 'hover:bg-slate-200', 'bg-slate-700')">基础 {{ allModelGroups.base.length }}</button>
-                <button @click="setActiveModelFilter('thinking')" :class="getFilterBadgeClass('thinking', 'bg-amber-100', 'text-amber-700', 'hover:bg-amber-200', 'bg-amber-500')">Thinking {{ allModelGroups.thinking.length }}</button>
-                <button @click="setActiveModelFilter('search')" :class="getFilterBadgeClass('search', 'bg-cyan-100', 'text-cyan-700', 'hover:bg-cyan-200', 'bg-cyan-500')">Search {{ allModelGroups.search.length }}</button>
-                <button @click="setActiveModelFilter('image')" :class="getFilterBadgeClass('image', 'bg-rose-100', 'text-rose-700', 'hover:bg-rose-200', 'bg-rose-500')">Image {{ allModelGroups.image.length }}</button>
-                <button @click="setActiveModelFilter('video')" :class="getFilterBadgeClass('video', 'bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200', 'bg-indigo-500')">Video {{ allModelGroups.video.length }}</button>
-                <button @click="setActiveModelFilter('imageEdit')" :class="getFilterBadgeClass('imageEdit', 'bg-emerald-100', 'text-emerald-700', 'hover:bg-emerald-200', 'bg-emerald-500')">Image Edit {{ allModelGroups.imageEdit.length }}</button>
+                <button @click="setActiveModelFilter('all')" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200', activeModelFilter === 'all' ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50']">全部 {{ availableModels.length }}</button>
+                <button @click="setActiveModelFilter('base')" :class="getFilterBadgeClass('base')">基础 {{ allModelGroups.base.length }}</button>
+                <button @click="setActiveModelFilter('thinking')" :class="getFilterBadgeClass('thinking')">Thinking {{ allModelGroups.thinking.length }}</button>
+                <button @click="setActiveModelFilter('search')" :class="getFilterBadgeClass('search')">Search {{ allModelGroups.search.length }}</button>
+                <button @click="setActiveModelFilter('image')" :class="getFilterBadgeClass('image')">Image {{ allModelGroups.image.length }}</button>
+                <button @click="setActiveModelFilter('video')" :class="getFilterBadgeClass('video')">Video {{ allModelGroups.video.length }}</button>
+                <button @click="setActiveModelFilter('imageEdit')" :class="getFilterBadgeClass('imageEdit')">Image Edit {{ allModelGroups.imageEdit.length }}</button>
               </div>
               <div class="flex w-full sm:w-auto gap-2">
                 <div class="relative w-full sm:w-72">
                   <input v-model="modelKeyword" type="text" placeholder="搜索模型 ID" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm focus:border-violet-400 focus:ring-violet-400 transition-all duration-300">
                 </div>
-                <button @click="refreshModels" :disabled="isLoadingModels" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 border', isLoadingModels ? 'bg-violet-200 text-violet-600 border-violet-200 cursor-not-allowed' : 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700']">{{ isLoadingModels ? '刷新中...' : '刷新模型列表' }}</button>
+                <button @click="refreshModels" :disabled="isLoadingModels" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 border', isLoadingModels ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-950 text-white border-slate-950 hover:bg-slate-800']">{{ isLoadingModels ? '刷新中...' : '刷新模型列表' }}</button>
               </div>
             </div>
 
             <div v-if="isLoadingModels" class="py-12 text-center text-slate-500">正在加载模型列表...</div>
-            <div v-else-if="modelsError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-red-600">
+            <div v-else-if="modelsError" class="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-700">
               <div class="text-lg font-semibold">模型列表加载失败</div>
               <div class="mt-2 text-sm whitespace-pre-line">{{ modelsError }}</div>
-              <button @click="refreshModels" class="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-all duration-300">重新加载</button>
+              <button @click="refreshModels" class="mt-4 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-all duration-200">重新加载</button>
             </div>
             <div v-else ref="modelsScrollContainer" class="max-h-[70vh] overflow-y-auto pr-2">
               <div class="space-y-5">
-                <div v-for="group in groupedModelSections" :key="group.key" v-show="group.models.length" class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm">
+                <div v-for="group in groupedModelSections" :key="group.key" v-show="group.models.length" class="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
                   <div class="mb-3 flex items-center justify-between gap-3">
                     <div>
                       <h3 class="text-lg font-semibold text-slate-800">{{ group.title }}</h3>
                       <p class="text-xs text-slate-500 mt-1">{{ group.description }}</p>
                       <p class="mt-2 text-xs text-slate-400">当前分类已按模型强度从高到低排序</p>
                     </div>
-                    <span :class="group.badgeClass" class="rounded-full px-3 py-1 text-xs font-semibold">{{ group.models.length }} 个</span>
+                    <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">{{ group.models.length }} 个</span>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                    <div v-for="model in group.models" :key="model.id" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div v-for="model in group.models" :key="model.id" class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm hover:shadow-md transition-all duration-200">
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
                           <div class="font-semibold text-slate-800 break-all">{{ model.id }}</div>
                           <div class="mt-2 text-xs text-slate-500 break-all">模型名称：{{ getModelDisplayName(model) }}</div>
                           <div class="mt-2 flex flex-wrap gap-2">
-                            <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{{ model.owned_by || 'unknown' }}</span>
-                            <span v-if="modelTagSummary(model).length" class="rounded-full bg-violet-100 px-2 py-1 text-xs text-violet-700">{{ modelTagSummary(model).join(' / ') }}</span>
-                            <span class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">推荐：{{ getModelUseCase(model) }}</span>
+                            <span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">{{ model.owned_by || 'unknown' }}</span>
+                            <span v-if="modelTagSummary(model).length" class="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">{{ modelTagSummary(model).join(' / ') }}</span>
+                            <span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">推荐：{{ getModelUseCase(model) }}</span>
                             <div class="relative group/tooltip inline-flex">
-                              <span class="cursor-help rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">强度：{{ getModelPriorityLabel(model, group.key) }}</span>
-                              <div class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-64 rounded-2xl border border-amber-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-sm group-hover/tooltip:block">
-                                <div class="font-semibold text-amber-700">强度说明</div>
+                              <span class="cursor-help rounded-full border border-slate-200 bg-slate-900 px-2 py-1 text-xs text-white">强度：{{ getModelPriorityLabel(model, group.key) }}</span>
+                              <div class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-64 rounded-2xl border border-slate-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-sm group-hover/tooltip:block">
+                                <div class="font-semibold text-slate-900">强度说明</div>
                                 <div class="mt-2 leading-5 whitespace-pre-line">{{ getModelPriorityTooltip(model, group.key) }}</div>
                               </div>
                             </div>
@@ -261,9 +293,9 @@
                         </div>
                       </div>
                       <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        <button @click="copyToClipboard(model.id)" class="rounded-lg bg-violet-100 px-2 py-2 text-sm text-violet-700 hover:bg-violet-200 transition-all duration-300">复制 ID</button>
-                        <button @click="copyToClipboard(getModelDisplayName(model))" class="rounded-lg bg-sky-100 px-2 py-2 text-sm text-sky-700 hover:bg-sky-200 transition-all duration-300">复制名字</button>
-                        <button @click="copyModelRequestExample(model)" class="col-span-2 sm:col-span-1 rounded-lg bg-amber-100 px-2 py-2 text-sm text-amber-700 hover:bg-amber-200 transition-all duration-300">复制示例</button>
+                        <button @click="copyToClipboard(model.id)" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200">复制 ID</button>
+                        <button @click="copyToClipboard(getModelDisplayName(model))" class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200">复制名字</button>
+                        <button @click="copyModelRequestExample(model)" class="col-span-2 sm:col-span-1 rounded-lg bg-slate-950 px-2 py-2 text-sm text-white hover:bg-slate-800 transition-all duration-200">复制示例</button>
                       </div>
                     </div>
                   </div>
@@ -281,12 +313,12 @@
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button @click="fetchLogs" class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 transition-all duration-300">刷新日志</button>
-                <button @click="toggleAutoRefreshLogs" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300', logsAutoRefresh ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200']">
+                <button @click="toggleAutoRefreshLogs" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 border', logsAutoRefresh ? 'border-slate-950 bg-slate-950 text-white hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50']">
                   {{ logsAutoRefresh ? '停止自动刷新' : '自动刷新' }}
                 </button>
-                <button @click="downloadLogs" class="rounded-xl bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-200 transition-all duration-300">下载日志</button>
-                <button @click="copyLogs" class="rounded-xl bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-200 transition-all duration-300">复制日志</button>
-                <button @click="clearLogs" class="rounded-xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200 transition-all duration-300">清空日志</button>
+                <button @click="downloadLogs" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200">下载日志</button>
+                <button @click="copyLogs" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200">复制日志</button>
+                <button @click="clearLogs" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200">清空日志</button>
               </div>
             </div>
 
@@ -320,15 +352,15 @@
               <div class="flex flex-wrap items-center gap-3">
                 <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm">
                   <span>运行日志</span>
-                  <button @click="toggleRuntimeLog" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', runtimeLogEnabled ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
-                    {{ runtimeLogEnabled ? '已启用' : '已关闭' }}
-                  </button>
+                <button @click="toggleRuntimeLog" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200', runtimeLogEnabled ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
+                  {{ runtimeLogEnabled ? '已启用' : '已关闭' }}
+                </button>
                 </div>
                 <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm">
                   <span>自动滚底</span>
-                  <button @click="logsAutoScroll = !logsAutoScroll" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300', logsAutoScroll ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
-                    {{ logsAutoScroll ? '已开启' : '已关闭' }}
-                  </button>
+                <button @click="logsAutoScroll = !logsAutoScroll" :class="['rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200', logsAutoScroll ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-700 hover:bg-slate-300']">
+                  {{ logsAutoScroll ? '已开启' : '已关闭' }}
+                </button>
                 </div>
               </div>
             </div>
@@ -340,23 +372,197 @@
             </div>
 
             <div class="rounded-3xl border border-slate-200 bg-slate-950 text-slate-100 shadow-inner overflow-hidden">
-              <div ref="logsScrollContainer" class="max-h-[70vh] overflow-y-auto p-4 font-mono text-xs leading-6 whitespace-pre-wrap break-words">
-                <div v-if="isLoadingLogs" class="text-slate-400">正在加载日志...</div>
-                <div v-else-if="logsError" class="text-red-300">{{ logsError }}</div>
-                <div v-else-if="!logs.length" class="text-slate-500">当前没有可显示的日志</div>
-                <div v-else>{{ formattedLogs }}</div>
+                <div ref="logsScrollContainer" class="max-h-[70vh] overflow-y-auto p-4 font-mono text-xs leading-6 break-words">
+                  <div v-if="isLoadingLogs" class="text-slate-400">正在加载日志...</div>
+                  <div v-else-if="logsError" class="text-red-300">{{ logsError }}</div>
+                  <div v-else-if="!logs.length" class="text-slate-500">当前没有可显示的日志</div>
+                  <div v-else class="space-y-1" v-html="formattedLogsHtml"></div>
+                </div>
+            </div>
+          </div>
+
+          <div v-else-if="activeDashboardTab === 'usage'">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-800">使用统计</h2>
+                <p class="mt-2 text-sm text-slate-500">按模型查看请求次数、Token 数量和成功率</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <input v-model="usageKeyword" type="text" placeholder="搜索模型名称" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+                <button @click="usageOnlyToday = !usageOnlyToday" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 border', usageOnlyToday ? 'border-slate-950 bg-slate-950 text-white hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50']">{{ usageOnlyToday ? '仅看今天中' : '仅看今天' }}</button>
+                <button @click="usageOnlyFailed = !usageOnlyFailed" :class="['rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 border', usageOnlyFailed ? 'border-slate-950 bg-slate-950 text-white hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50']">{{ usageOnlyFailed ? '仅失败中' : '仅看失败模型' }}</button>
+                <select v-model="usageSortBy" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:ring-slate-400 transition-all duration-300">
+                  <option value="totalTokens">按总 Token 排序</option>
+                  <option value="requests">按请求次数排序</option>
+                </select>
+                <button @click="fetchUsageStats" class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 transition-all duration-300">刷新统计</button>
+                <button @click="resetUsageStats" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200">清空统计</button>
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-7 mb-6">
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">总请求数</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ usageSummary.requests }}</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">成功请求</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ usageSummary.success }}</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">失败请求</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ usageSummary.failed }}</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">总 Token</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ formatNumber(usageSummary.totalTokens) }}</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">成功率</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ usageSummary.successRate }}%</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">今日请求</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ usageSummary.today?.requests || 0 }}</div></div>
+              <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm"><div class="text-xs text-slate-500">今日 Token</div><div class="mt-2 text-2xl font-bold text-slate-800">{{ formatNumber(usageSummary.today?.totalTokens || 0) }}</div></div>
+            </div>
+
+            <div class="mb-6 grid gap-6 xl:grid-cols-2">
+              <div class="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm">
+                <div class="mb-4">
+                  <h3 class="text-lg font-semibold text-slate-800">今日请求趋势</h3>
+                  <p class="mt-1 text-xs text-slate-500">按小时统计请求次数</p>
+                </div>
+                <div class="grid grid-cols-12 md:grid-cols-24 gap-2 items-end h-52 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div v-for="item in usageTrendData" :key="`requests-${item.hour}`" class="flex flex-col items-center justify-end gap-2 h-full">
+                    <div class="w-full rounded-t-md bg-slate-900 min-h-[8px] shadow-[0_8px_20px_rgba(15,23,42,0.08)]" :style="{ height: item.requestHeight }"></div>
+                    <div class="text-[10px] text-slate-400 tracking-wide">{{ String(item.hour).padStart(2, '0') }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm">
+                <div class="mb-4">
+                  <h3 class="text-lg font-semibold text-slate-800">今日 Token 趋势</h3>
+                  <p class="mt-1 text-xs text-slate-500">按小时统计 Token 消耗</p>
+                </div>
+                <div class="grid grid-cols-12 md:grid-cols-24 gap-2 items-end h-52 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div v-for="item in usageTrendData" :key="`tokens-${item.hour}`" class="flex flex-col items-center justify-end gap-2 h-full">
+                    <div class="w-full rounded-t-md bg-slate-500 min-h-[8px] shadow-[0_8px_20px_rgba(15,23,42,0.06)]" :style="{ height: item.tokenHeight }"></div>
+                    <div class="text-[10px] text-slate-400 tracking-wide">{{ String(item.hour).padStart(2, '0') }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white/80 shadow-sm overflow-hidden">
+              <div class="max-h-[60vh] overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="sticky top-0 z-10 bg-slate-100 text-slate-600">
+                    <tr>
+                      <th class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide">模型名称</th>
+                      <th class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide">请求次数</th>
+                      <th class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide">Prompt Tokens</th>
+                      <th class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide">Completion Tokens</th>
+                      <th class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide">总 Token</th>
+                      <th class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide">成功率</th>
+                      <th class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide">最近使用</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="isLoadingUsageStats">
+                      <td colspan="7" class="px-4 py-10 text-center text-slate-500">正在加载使用统计...</td>
+                    </tr>
+                    <tr v-else-if="usageStatsError">
+                      <td colspan="7" class="px-4 py-10 text-center text-red-500">{{ usageStatsError }}</td>
+                    </tr>
+                    <tr v-else-if="!sortedUsageModels.length">
+                      <td colspan="7" class="px-4 py-10 text-center text-slate-500">暂无统计数据</td>
+                    </tr>
+                    <tr v-for="item in sortedUsageModels" :key="item.model" class="border-t border-slate-100 hover:bg-slate-50/70">
+                      <td class="px-4 py-3 font-medium text-slate-800 break-all">{{ item.model }}</td>
+                      <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(item.requests) }}</td>
+                      <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(item.promptTokens) }}</td>
+                      <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(item.completionTokens) }}</td>
+                      <td class="px-4 py-3 text-right font-semibold text-slate-800">{{ formatNumber(item.totalTokens) }}</td>
+                      <td class="px-4 py-3 text-right"><span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700">{{ item.successRate }}%</span></td>
+                      <td class="px-4 py-3 text-slate-500">{{ item.lastUsedAt ? new Date(item.lastUsedAt).toLocaleString() : '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
 
-          <div v-else class="rounded-3xl border border-blue-100 bg-blue-50/80 p-6">
-            <h2 class="text-2xl font-bold text-slate-800">系统设置</h2>
-            <p class="mt-3 text-sm leading-6 text-slate-600">系统设置仍使用独立页面管理。这里保留左右布局入口，点击下面按钮即可进入原设置页。</p>
-            <div class="mt-5">
-              <button @click="goToSettings" class="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-700">进入系统设置页</button>
+          <div v-else>
+            <div class="mb-6">
+              <h2 class="text-2xl font-bold text-slate-800">系统设置</h2>
+              <p class="mt-2 text-sm text-slate-500">直接在当前仪表盘中维护 API Key 与系统行为配置</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+              <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 class="text-lg font-semibold text-slate-800">API Key 管理</h3>
+                    <p class="mt-1 text-sm text-slate-500">管理员密钥只读，普通密钥可动态增删</p>
+                  </div>
+                  <button @click="showAddKeyModal = true" class="vc-button-primary">添加密钥</button>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 mb-4">
+                  <div class="mb-2 flex items-center gap-2">
+                    <span class="font-semibold text-slate-800">管理员密钥</span>
+                    <span class="rounded-full bg-slate-200 px-2 py-1 text-xs text-slate-700">不可修改</span>
+                  </div>
+                  <input :value="settings.adminKey" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                </div>
+
+                <div class="space-y-3">
+                  <div v-if="settings.regularKeys.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">暂无普通密钥</div>
+                  <div v-for="(key, index) in settings.regularKeys" :key="index" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center">
+                    <input :value="key" type="text" readonly class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                    <button @click="deleteRegularKey(index)" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200">删除</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+                  <h3 class="text-lg font-semibold text-slate-800">自动刷新</h3>
+                  <div class="mt-4 flex items-center gap-3">
+                    <input v-model="settings.autoRefresh" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm text-slate-600">启用自动刷新</span>
+                  </div>
+                  <label class="mt-4 block text-sm text-slate-500">刷新间隔（秒）</label>
+                  <input v-model.number="settings.autoRefreshInterval" type="number" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  <button @click="saveAutoRefresh" class="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-all duration-300">保存</button>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+                  <h3 class="text-lg font-semibold text-slate-800">思考输出</h3>
+                  <div class="mt-4 flex items-center gap-3">
+                    <input v-model="settings.outThink" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm text-slate-600">启用思考输出</span>
+                  </div>
+                  <button @click="saveOutThink" class="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-all duration-300">保存</button>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+                  <h3 class="text-lg font-semibold text-slate-800">搜索信息显示模式</h3>
+                  <select v-model="settings.searchInfoMode" class="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                    <option value="table">表格模式</option>
+                    <option value="text">文本模式</option>
+                  </select>
+                  <button @click="saveSearchInfoMode" class="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-all duration-300">保存</button>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+                  <h3 class="text-lg font-semibold text-slate-800">简化模型映射</h3>
+                  <div class="mt-4 flex items-start gap-3">
+                    <input v-model="settings.simpleModelMap" type="checkbox" class="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm leading-6 text-slate-600">只返回基础模型，不包含 thinking、search、image 等变体</span>
+                  </div>
+                  <button @click="saveSimpleModelMap" class="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-all duration-300">保存</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
+      </div>
+    </div>
+
+    <div v-if="showAddKeyModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" @click.self="showAddKeyModal = false">
+      <div class="vc-shell w-96 max-w-[90vw] p-6">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">添加普通 API Key</h3>
+        <input v-model="newApiKey" type="text" placeholder="请输入 API Key" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 mb-4">
+        <div class="flex justify-end gap-3">
+          <button @click="showAddKeyModal = false" class="vc-button-secondary">取消</button>
+          <button @click="addRegularKey" class="vc-button-primary">添加</button>
+        </div>
       </div>
     </div>
 
@@ -364,16 +570,14 @@
     <div v-if="showDeleteAllConfirm" 
          class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
          @click.self="showDeleteAllConfirm = false">
-      <div class="relative bg-white/90 backdrop-blur-lg rounded-2xl p-6 w-11/12 max-w-md transform transition-all duration-300 scale-100 opacity-100">
-        <h2 class="text-2xl font-bold text-red-600 mb-4">⚠️ 危险操作</h2>
-        <p class="text-gray-700 mb-6">您确定要删除<span class="font-bold">全部 {{ totalItems }} 个</span>账号吗？此操作不可恢复！</p>
+      <div class="vc-shell w-11/12 max-w-md p-6">
+        <h2 class="text-2xl font-bold text-slate-950 mb-4">危险操作确认</h2>
+        <p class="text-slate-600 mb-6">您确定要删除<span class="font-bold text-slate-950">全部 {{ totalItems }} 个</span>账号吗？此操作不可恢复。</p>
         <div class="flex justify-end space-x-4">
-          <button @click="showDeleteAllConfirm = false" 
-                  class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-300">
+          <button @click="showDeleteAllConfirm = false" class="vc-button-secondary">
             取消
           </button>
-          <button @click="deleteAllAccounts" 
-                  class="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all duration-300">
+          <button @click="deleteAllAccounts" class="vc-button-primary bg-slate-950 hover:bg-slate-800">
             确认删除
           </button>
         </div>
@@ -384,32 +588,28 @@
     <div v-if="showAddModal" 
          class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
          @click.self="showAddModal = false">
-      <div class="relative bg-white/80 backdrop-blur-lg rounded-2xl p-6 w-11/12 max-w-md transform transition-all duration-300 scale-100 opacity-100">
-        <div class="flex mb-6 border-b border-gray-200">
-          <button :class="['flex-1 py-2 font-bold transition-all rounded-t-xl duration-300', addMode==='single' ? 'text-gray-600 border-b-2 border-gray-500 bg-gray-50/60' : 'text-gray-500 bg-transparent']" @click="addMode='single'">单账号添加</button>
-          <button :class="['flex-1 py-2 font-bold transition-all rounded-t-xl duration-300', addMode==='batch' ? 'text-gray-600 border-b-2 border-gray-500 bg-gray-50/60' : 'text-gray-500 bg-transparent']" @click="addMode='batch'">批量添加</button>
+      <div class="vc-shell w-11/12 max-w-md p-6">
+        <div class="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+          <button :class="['rounded-2xl py-2 text-sm font-medium transition-all duration-200', addMode==='single' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:bg-white']" @click="addMode='single'">单账号添加</button>
+          <button :class="['rounded-2xl py-2 text-sm font-medium transition-all duration-200', addMode==='batch' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:bg-white']" @click="addMode='batch'">批量添加</button>
         </div>
         <transition name="fade" mode="out-in">
           <div v-if="addMode==='single'" key="single">
             <h2 class="text-xl font-bold mb-4">添加账号</h2>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input v-model="newAccount.email" type="email" 
-                       class="mt-1 block w-full rounded-xl border-gray-300 bg-white/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300 h-12 text-base px-4">
+                <label class="block text-sm font-medium text-slate-700">Email</label>
+                <input v-model="newAccount.email" type="email" class="vc-input mt-1 h-12">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Password</label>
-                <input v-model="newAccount.password" type="password" 
-                       class="mt-1 block w-full rounded-xl border-gray-300 bg-white/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300 h-12 text-base px-4">
+                <label class="block text-sm font-medium text-slate-700">Password</label>
+                <input v-model="newAccount.password" type="password" class="vc-input mt-1 h-12">
               </div>
               <div class="flex justify-end space-x-4 pt-4">
-                <button @click="showAddModal = false" 
-                        class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-300">
+                <button @click="showAddModal = false" class="vc-button-secondary">
                   取消
                 </button>
-                <button @click="addToken" 
-                        class="px-4 py-2 rounded-xl bg-black text-white hover:bg-white hover:text-black transition-all duration-300">
+                <button @click="addToken" class="vc-button-primary">
                   添加
                 </button>
               </div>
@@ -419,16 +619,14 @@
             <h2 class="text-xl font-bold mb-4 px-4">批量添加账号</h2>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 px-4 pb-2">账号列表（每行一个，格式：email:password）</label>
-                <textarea v-model="batchAccounts" rows="6" class="mt-1 block w-full rounded-xl border-gray-300 bg-white/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-300 h-36 text-base px-4 py-3 resize-none"></textarea>
+                <label class="block text-sm font-medium text-slate-700 px-4 pb-2">账号列表（每行一个，格式：email:password）</label>
+                <textarea v-model="batchAccounts" rows="6" class="vc-input mt-1 h-36 resize-none"></textarea>
               </div>
               <div class="flex justify-end space-x-4 pt-4">
-                <button @click="showAddModal = false" 
-                        class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-300">
+                <button @click="showAddModal = false" class="vc-button-secondary">
                   取消
                 </button>
-                <button @click="addBatchTokens" 
-                        class="px-4 py-2 rounded-xl bg-black text-white hover:bg-white hover:text-black transition-all duration-300">
+                <button @click="addBatchTokens" class="vc-button-primary">
                   批量添加
                 </button>
               </div>
@@ -442,7 +640,7 @@
     <div v-if="toast.show"
          :class="[
            'fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300',
-           toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+           toast.type === 'success' ? 'bg-slate-950 text-white' : 'bg-slate-700 text-white'
          ]">
       <div class="flex items-center space-x-2">
         <svg v-if="toast.type === 'success'" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -473,6 +671,20 @@ const newAccount = ref({
   password: ''
 })
 const batchAccounts = ref('')
+const settings = ref({
+  apiKey: localStorage.getItem('apiKey') || '',
+  adminKey: '',
+  regularKeys: [],
+  defaultHeaders: '',
+  defaultCookie: '',
+  autoRefresh: false,
+  autoRefreshInterval: 21600,
+  outThink: false,
+  searchInfoMode: 'table',
+  simpleModelMap: false
+})
+const showAddKeyModal = ref(false)
+const newApiKey = ref('')
 
 // 分页相关
 const displayedTokens = ref([])
@@ -510,6 +722,17 @@ const logsLimit = ref('200')
 const runtimeLogEnabled = ref(true)
 const logsAutoScroll = ref(true)
 const logsScrollContainer = ref(null)
+const siteBaseUrl = ref(typeof window !== 'undefined' ? window.location.origin : '')
+const connectionStatus = ref('checking')
+const isCheckingConnection = ref(false)
+const usageSummary = ref({ requests: 0, success: 0, failed: 0, totalTokens: 0, successRate: 0 })
+const usageModels = ref([])
+const isLoadingUsageStats = ref(false)
+const usageStatsError = ref('')
+const usageSortBy = ref('totalTokens')
+const usageKeyword = ref('')
+const usageOnlyToday = ref(false)
+const usageOnlyFailed = ref(false)
 let logsRefreshTimer = null
 
 // Toast 通知
@@ -517,6 +740,12 @@ const toast = ref({
   show: false,
   message: '',
   type: 'success'
+})
+
+const connectionStatusLabel = computed(() => {
+  if (connectionStatus.value === 'connected') return '已连接'
+  if (connectionStatus.value === 'failed') return '连接失败'
+  return '连接检测中'
 })
 
 const filteredLogs = computed(() => {
@@ -544,6 +773,20 @@ const filteredLogs = computed(() => {
 })
 
 const formattedLogs = computed(() => filteredLogs.value.map(item => item.text).join('\n'))
+
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+
+const highlightLogLine = (text) => {
+  let line = escapeHtml(text)
+  line = line.replace(/\[(ERROR|WARN|INFO|DEBUG)\]/g, '<span class="inline-block rounded-md border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-white">[$1]</span>')
+  line = line.replace(/\[(SERVER|ACCOUNT|CHAT|CONFIG|CLI|SSXMOD|AUTO|REQUEST|PARSER|USAGE)\]/g, '<span class="inline-block rounded-md border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">[$1]</span>')
+  return `<div>${line}</div>`
+}
+
+const formattedLogsHtml = computed(() => filteredLogs.value.map(item => highlightLogLine(item.text)).join(''))
 
 const filteredModels = computed(() => {
   const keyword = modelKeyword.value.trim().toLowerCase()
@@ -718,37 +961,18 @@ const getModelDisplayName = (model) => {
 }
 
 const getSidebarItemClass = (tabKey, tone) => {
-  const activeMap = {
-    emerald: 'bg-emerald-600 text-white border-emerald-600 shadow-lg',
-    violet: 'bg-violet-600 text-white border-violet-600 shadow-lg',
-    blue: 'bg-blue-600 text-white border-blue-600 shadow-lg',
-    slate: 'bg-slate-700 text-white border-slate-700 shadow-lg'
-  }
-
-  const idleMap = {
-    emerald: 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100',
-    violet: 'bg-violet-50 text-violet-900 border-violet-200 hover:bg-violet-100',
-    blue: 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100',
-    slate: 'bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200'
-  }
-
   return [
-    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-300',
-    activeDashboardTab.value === tabKey ? activeMap[tone] : idleMap[tone]
+    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200',
+    activeDashboardTab.value === tabKey
+      ? 'border-slate-900 bg-slate-950 text-white shadow-[0_10px_30px_rgba(15,23,42,0.18)]'
+      : 'border-slate-200 bg-white/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
   ]
 }
 
 const getActionSidebarClass = (tone, disabled = false) => {
-  const toneMap = {
-    green: 'bg-green-50 text-green-900 border-green-200 hover:bg-green-100',
-    purple: 'bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100',
-    pink: 'bg-pink-50 text-pink-900 border-pink-200 hover:bg-pink-100',
-    yellow: 'bg-yellow-50 text-yellow-900 border-yellow-200 hover:bg-yellow-100'
-  }
-
   return [
-    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-300',
-    disabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 border-slate-200' : toneMap[tone]
+    'w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200',
+    disabled ? 'cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200' : 'border-slate-200 bg-white/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
   ]
 }
 
@@ -758,6 +982,229 @@ const setDashboardTab = (tabKey) => {
 
 const goToSettings = () => {
   router.push('/settings')
+}
+
+const refreshConnectionStatus = async () => {
+  isCheckingConnection.value = true
+  connectionStatus.value = 'checking'
+
+  try {
+    await axios.get('/models', { timeout: 10000 })
+    connectionStatus.value = 'connected'
+    showToast('连接状态已刷新')
+  } catch (error) {
+    console.error('刷新连接状态失败:', error)
+    connectionStatus.value = 'failed'
+    showToast('连接检测失败', 'error')
+  } finally {
+    isCheckingConnection.value = false
+  }
+}
+
+const logout = () => {
+  localStorage.removeItem('apiKey')
+  router.replace('/auth')
+}
+
+const formatNumber = (value) => {
+  return new Intl.NumberFormat('zh-CN').format(value || 0)
+}
+
+const sortedUsageModels = computed(() => {
+  const keyword = usageKeyword.value.trim().toLowerCase()
+  const items = usageModels.value.filter(item => {
+    const source = usageOnlyToday.value ? (item.today || {}) : item
+    const matchKeyword = !keyword || item.model.toLowerCase().includes(keyword)
+    const matchFailed = !usageOnlyFailed.value || (source.failed || 0) > 0
+    const matchToday = !usageOnlyToday.value || (source.requests || 0) > 0
+    return matchKeyword && matchFailed && matchToday
+  }).map(item => {
+    if (!usageOnlyToday.value) {
+      return item
+    }
+
+    const today = item.today || { requests: 0, success: 0, failed: 0, totalTokens: 0 }
+    const successRate = today.requests > 0 ? Number(((today.success / today.requests) * 100).toFixed(2)) : 0
+
+    return {
+      ...item,
+      requests: today.requests || 0,
+      success: today.success || 0,
+      failed: today.failed || 0,
+      totalTokens: today.totalTokens || 0,
+      promptTokens: today.totalTokens || 0,
+      completionTokens: 0,
+      successRate
+    }
+  })
+
+  if (usageSortBy.value === 'requests') {
+    return items.sort((a, b) => b.requests - a.requests || b.totalTokens - a.totalTokens)
+  }
+
+  return items.sort((a, b) => b.totalTokens - a.totalTokens || b.requests - a.requests)
+})
+
+const usageTrendData = computed(() => {
+  const hourly = Array.isArray(usageSummary.value.today?.hourly) ? usageSummary.value.today.hourly : []
+  const buckets = Array.from({ length: 24 }, (_, hour) => {
+    const item = hourly.find(entry => entry.hour === hour) || { hour, requests: 0, totalTokens: 0 }
+    return item
+  })
+
+  const maxRequests = Math.max(1, ...buckets.map(item => item.requests || 0))
+  const maxTokens = Math.max(1, ...buckets.map(item => item.totalTokens || 0))
+
+  return buckets.map(item => ({
+    ...item,
+    requestHeight: `${Math.max(8, Math.round(((item.requests || 0) / maxRequests) * 100))}%`,
+    tokenHeight: `${Math.max(8, Math.round(((item.totalTokens || 0) / maxTokens) * 100))}%`
+  }))
+})
+
+const fetchUsageStats = async () => {
+  isLoadingUsageStats.value = true
+  usageStatsError.value = ''
+  try {
+    const response = await axios.get('/api/usage-stats', {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+    usageSummary.value = response.data?.summary || usageSummary.value
+    usageModels.value = Array.isArray(response.data?.models) ? response.data.models : []
+  } catch (error) {
+    console.error('获取使用统计失败:', error)
+    usageStatsError.value = error.response?.data?.error || error.message || '获取使用统计失败'
+  } finally {
+    isLoadingUsageStats.value = false
+  }
+}
+
+const loadSettings = async () => {
+  try {
+    const res = await axios.get('/api/settings', {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+    settings.value.apiKey = res.data.apiKey
+    settings.value.adminKey = res.data.adminKey || ''
+    settings.value.regularKeys = res.data.regularKeys || []
+    settings.value.defaultHeaders = JSON.stringify(res.data.defaultHeaders)
+    settings.value.defaultCookie = res.data.defaultCookie
+    settings.value.autoRefresh = res.data.autoRefresh
+    settings.value.autoRefreshInterval = res.data.autoRefreshInterval
+    settings.value.outThink = res.data.outThink
+    settings.value.searchInfoMode = res.data.searchInfoMode
+    settings.value.simpleModelMap = res.data.simpleModelMap
+  } catch (error) {
+    console.error('加载设置失败:', error)
+    showToast('加载设置失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const saveAutoRefresh = async () => {
+  try {
+    await axios.post('/api/setAutoRefresh', {
+      autoRefresh: settings.value.autoRefresh,
+      autoRefreshInterval: settings.value.autoRefreshInterval
+    }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    showToast('自动刷新设置保存成功')
+  } catch (error) {
+    showToast('自动刷新设置保存失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const saveOutThink = async () => {
+  try {
+    await axios.post('/api/setOutThink', { outThink: settings.value.outThink }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    showToast('思考输出设置保存成功')
+  } catch (error) {
+    showToast('思考输出设置保存失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const saveSearchInfoMode = async () => {
+  try {
+    await axios.post('/api/search-info-mode', { searchInfoMode: settings.value.searchInfoMode }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    showToast('搜索信息模式保存成功')
+  } catch (error) {
+    showToast('搜索信息模式保存失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const saveSimpleModelMap = async () => {
+  try {
+    await axios.post('/api/simple-model-map', { simpleModelMap: settings.value.simpleModelMap }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    showToast('简化模型映射设置保存成功')
+  } catch (error) {
+    showToast('简化模型映射设置保存失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const addRegularKey = async () => {
+  if (!newApiKey.value.trim()) {
+    showToast('请输入 API Key', 'error')
+    return
+  }
+
+  try {
+    await axios.post('/api/addRegularKey', { apiKey: newApiKey.value.trim() }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    newApiKey.value = ''
+    showAddKeyModal.value = false
+    await loadSettings()
+    showToast('API Key 添加成功')
+  } catch (error) {
+    showToast('API Key 添加失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const deleteRegularKey = async (index) => {
+  if (!confirm('确定要删除此 API Key 吗？')) return
+
+  const keyToDelete = settings.value.regularKeys[index]
+  try {
+    await axios.post('/api/deleteRegularKey', { apiKey: keyToDelete }, {
+      headers: { 'Authorization': localStorage.getItem('apiKey') || '' }
+    })
+    await loadSettings()
+    showToast('API Key 删除成功')
+  } catch (error) {
+    showToast('API Key 删除失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const resetUsageStats = async () => {
+  if (!confirm('确定要清空全部使用统计吗？')) return
+
+  try {
+    await axios.post('/api/usage-stats/reset', {}, {
+      headers: {
+        'Authorization': localStorage.getItem('apiKey') || ''
+      }
+    })
+    await fetchUsageStats()
+    showToast('使用统计已清空')
+  } catch (error) {
+    console.error('清空使用统计失败:', error)
+    showToast('清空使用统计失败: ' + (error.response?.data?.error || error.message), 'error')
+  }
+}
+
+const openUsagePanel = async () => {
+  activeDashboardTab.value = 'usage'
+  await fetchUsageStats()
 }
 
 const fetchLogs = async () => {
@@ -879,12 +1326,12 @@ const setActiveModelFilter = (filterKey) => {
   }
 }
 
-const getFilterBadgeClass = (filterKey, bgClass, textClass, hoverClass, activeBgClass) => {
+const getFilterBadgeClass = (filterKey) => {
   return [
-    'rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300',
+    'rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 border',
     activeModelFilter.value === filterKey
-      ? `${activeBgClass} text-white`
-      : `${bgClass} ${textClass} ${hoverClass}`
+      ? 'border-slate-950 bg-slate-950 text-white'
+      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
   ]
 }
 
@@ -1365,6 +1812,8 @@ const openModelsPanel = async () => {
 
 onMounted(() => {
   getTokens()
+  loadSettings()
+  refreshConnectionStatus()
 })
 </script>
 
@@ -1388,14 +1837,17 @@ onMounted(() => {
 }
 
 .token-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
   transform: translateY(0);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .token-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
 }
 
 .scrollbar-hide {
@@ -1491,7 +1943,7 @@ onMounted(() => {
   left: 0;
   width: 0;
   height: 100%;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(15, 23, 42, 0.06);
   transition: width 0.3s ease;
 }
 
@@ -1519,159 +1971,52 @@ onMounted(() => {
 /* 给选中的卡片添加动画效果 */
 .token-card.ring-2 {
   animation: selected-pulse 2s infinite;
+  border-color: rgba(15, 23, 42, 0.26);
 }
 
 @keyframes selected-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.18);
   }
   70% {
-    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 6px rgba(15, 23, 42, 0);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
   }
 }
 
-/* 马卡龙紫色刷新按钮动画 */
-@keyframes refresh-pulse-purple {
+@keyframes refresh-pulse-neutral {
   0% {
-    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.16);
   }
   70% {
-    box-shadow: 0 0 0 6px rgba(168, 85, 247, 0);
+    box-shadow: 0 0 0 6px rgba(15, 23, 42, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0);
   }
 }
 
-/* 马卡龙绿色刷新按钮动画 */
-@keyframes refresh-pulse-green {
-  0% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-  }
-}
-
-/* 马卡龙粉色刷新按钮动画 */
-@keyframes refresh-pulse-pink {
-  0% {
-    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(236, 72, 153, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
-  }
-}
-
-.action-button:hover {
-  animation: refresh-pulse-purple 1.5s infinite;
-}
-
-/* 刷新中的按钮样式 - 马卡龙紫色 */
 .refreshing-button-purple {
-  background: linear-gradient(45deg, #c084fc, #a855f7);
+  background: #0f172a;
   color: white;
-  animation: refresh-pulse-purple 1.5s infinite;
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  animation: refresh-pulse-neutral 1.5s infinite;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
 }
 
-/* 刷新中的按钮样式 - 马卡龙绿色 */
 .refreshing-button-green {
-  background: linear-gradient(45deg, #86efac, #4ade80);
+  background: #0f172a;
   color: white;
-  animation: refresh-pulse-green 1.5s infinite;
-  box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+  animation: refresh-pulse-neutral 1.5s infinite;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
 }
 
-/* 刷新中的按钮样式 - 马卡龙粉色 */
 .refreshing-button-pink {
-  background: linear-gradient(45deg, #f472b6, #ec4899);
+  background: #0f172a;
   color: white;
-  animation: refresh-pulse-pink 1.5s infinite;
-  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
-}
-
-/* 马卡龙色系按钮增强效果 */
-.action-button {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* 单个刷新按钮的马卡龙绿色样式增强 */
-.text-green-600:hover {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
-  border-color: #86efac !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
-}
-
-/* 绿色刷新按钮的基础样式 */
-.bg-green-50 {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border: 1px solid #bbf7d0;
-}
-
-.bg-green-50:hover {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  border-color: #86efac;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
-}
-
-/* 马卡龙绿色按钮样式 */
-.macaron-green-button {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border: 1px solid #bbf7d0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.macaron-green-button:hover {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  border-color: #86efac;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
-}
-
-/* 马卡龙紫色按钮样式 */
-.macaron-purple-button {
-  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
-  border: 1px solid #e9d5ff;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.macaron-purple-button:hover {
-  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
-  border-color: #c4b5fd;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
-}
-
-/* 马卡龙粉色按钮样式 */
-.macaron-pink-button {
-  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
-  border: 1px solid #f9a8d4;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.macaron-pink-button:hover {
-  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-  border-color: #f472b6;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+  animation: refresh-pulse-neutral 1.5s infinite;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
 }
 
 /* 响应式优化 */

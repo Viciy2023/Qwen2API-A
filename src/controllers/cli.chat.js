@@ -1,6 +1,7 @@
 const axios = require('axios')
 const { logger } = require('../utils/logger')
 const { getProxyAgent, getCliBaseUrl, applyProxyToAxiosConfig } = require('../utils/proxy-helper')
+const usageStats = require('../utils/usage-stats')
 
 const MODEL_REDIRECT = {
     'qwen3.5-plus': 'coder-model',
@@ -169,14 +170,17 @@ const handleCliChatCompletion = async (req, res) => {
             response.data.on('end', () => {
                 logger.success(`CLI请求使用账号[${req.account.email}]转发成功 (流式) - 当前请求数: ${req.account.cli_info.request_number}`, 'CLI')
                 res.end()
+                usageStats.track({ model: body.model, success: true, usage: { total_tokens: 0 } })
             })
         } else {
             // 处理JSON响应
             res.json(formatCliJsonResponse(response.data, body.model))
             logger.success(`CLI请求使用账号[${req.account.email}]转发成功 (JSON) - 当前请求数: ${req.account.cli_info.request_number}`, 'CLI')
+            await usageStats.track({ model: body.model, success: true, usage: response.data?.usage || { total_tokens: 0 } })
         }
     } catch (error) {
         logger.error(`CLI请求使用账号[${req.account.email}]处理异常 - 当前请求数: ${req.account.cli_info.request_number}`, 'CLI', '💥', error.message)
+        await usageStats.track({ model: req.body?.model, success: false, usage: { total_tokens: 0 } })
 
         // 如果是axios错误，提供更详细的错误信息
         if (error.response) {

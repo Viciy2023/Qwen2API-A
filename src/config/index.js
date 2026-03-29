@@ -42,6 +42,7 @@ const config = {
     dataDir: paths.dataDir,
     cacheDir: paths.cacheDir,
     dataFilePath: paths.dataFilePath,
+    usageStatsFilePath: paths.usageStatsFilePath,
     // 自定义反代URL配置
     qwenChatProxyUrl: process.env.QWEN_CHAT_PROXY_URL || "https://chat.qwen.ai",
     qwenCliProxyUrl: process.env.QWEN_CLI_PROXY_URL || "https://portal.qwen.ai",

@@ -6,6 +6,7 @@ const { sleep } = require('../utils/tools.js')
 const { generateChatID } = require('../utils/request.js')
 const { getSsxmodItna, getSsxmodItna2 } = require('../utils/ssxmod-manager')
 const { getProxyAgent, getChatBaseUrl, applyProxyToAxiosConfig } = require('../utils/proxy-helper')
+const usageStats = require('../utils/usage-stats')
 
 /**
  * 主要的聊天完成处理函数
@@ -199,11 +200,13 @@ const handleImageVideoCompletion = async (req, res) => {
                 })
 
                 response_data.data.on('end', () => {
+                    usageStats.track({ model, success: !!contentUrl, usage: { total_tokens: 0 } })
                     return returnResponse(res, model, contentUrl, req.body.stream)
                 })
             } else if (newChatType == 'image_edit') {
                 console.log(response_data.data)
                 contentUrl = response_data.data?.data?.choices[0]?.message?.content[0]?.image
+                await usageStats.track({ model, success: !!contentUrl, usage: { total_tokens: 0 } })
                 return returnResponse(res, model, contentUrl, req.body.stream)
             } else if (newChatType == 't2v') {
                 return handleVideoCompletion(req, res, response_data.data, token)
@@ -211,10 +214,12 @@ const handleImageVideoCompletion = async (req, res) => {
 
         } catch (error) {
             logger.error('图片处理错误', 'CHAT', error)
+            await usageStats.track({ model, success: false, usage: { total_tokens: 0 } })
             res.status(500).json({ error: "服务错误!!!" })
         }
 
     } catch (error) {
+        await usageStats.track({ model, success: false, usage: { total_tokens: 0 } })
         res.status(500).json({
             error: "服务错误，请稍后再试"
         })
@@ -304,6 +309,7 @@ ${content}
                 } else {
                     res.json(returnBody)
                 }
+                await usageStats.track({ model: req.body.model, success: true, usage: { total_tokens: 0 } })
                 return
             } else if (content == null && req.body.stream) {
                 // 发送空数据保活
@@ -314,6 +320,7 @@ ${content}
         }
     } catch (error) {
         logger.error('获取视频任务状态失败', 'CHAT', error)
+        await usageStats.track({ model: req.body.model, success: false, usage: { total_tokens: 0 } })
         res.status(500).json({ error: error.response_data?.data?.code || "可能该帐号今日生成次数已用完" })
     }
 }

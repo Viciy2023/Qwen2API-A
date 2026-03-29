@@ -14,6 +14,7 @@ const cliChatRouter = require('./routes/cli.chat.js')
 const verifyRouter = require('./routes/verify.js')
 const accountsRouter = require('./routes/accounts.js')
 const settingsRouter = require('./routes/settings.js')
+const usageRouter = require('./routes/usage.js')
 
 if (config.dataSaveMode === 'file') {
   if (!fs.existsSync(paths.dataFilePath)) {
@@ -36,6 +37,7 @@ app.use(cliChatRouter)
 app.use(verifyRouter)
 app.use('/api', accountsRouter)
 app.use('/api', settingsRouter)
+app.use('/api', usageRouter)
 
 app.use(express.static(path.join(__dirname, '../public/dist')))
 
